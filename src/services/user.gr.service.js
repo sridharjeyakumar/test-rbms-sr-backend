@@ -572,6 +572,10 @@ export const generateHqReport = async (startDate, endDate, blockTypes, majorSect
             overAllStatus: req.overAllStatus,
             userId: req.userId, // Include userId for filtering
             Activity: req.activity,
+            DemandedTimeFrom: req.demandTimeFrom,
+            DemandedTimeTo: req.demandTimeTo,
+            SanctionedTimeFrom: req.sanctionedTimeFrom,
+            SanctionedTimeTo: req.sanctionedTimeTo,
         };
     });
 

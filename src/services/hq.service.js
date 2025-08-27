@@ -621,6 +621,10 @@ export const generateHqReport = async (
             Status: req.status,
             overAllStatus: req.overAllStatus,
             Activity: req.activity, // Include activity for detailed report
+            DemandedTimeFrom: req.demandTimeFrom,
+            DemandedTimeTo: req.demandTimeTo,
+            SanctionedTimeFrom: req.sanctionedTimeFrom,
+            SanctionedTimeTo: req.sanctionedTimeTo,
         };
     });
 

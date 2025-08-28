@@ -16,6 +16,7 @@ This is a boilerplate project for building applications using Node.js, Express.j
 
 ## Folder Structure
 
+
 The project is organized as follows:
 
 ```plaintext

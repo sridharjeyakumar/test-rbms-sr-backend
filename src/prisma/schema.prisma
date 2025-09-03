@@ -71,6 +71,7 @@ model Request {
   sigActionsNeeded                  Boolean?   @default(true)
   trdActionsNeeded                  Boolean?   @default(true)
   ManagerResponse                   String?
+  managerResponseTiming             DateTime?   
   sigDisconnectionRequirements      String?
   sntDisconnectionRequirements      Json?
   sntDisconnectionLine              String?

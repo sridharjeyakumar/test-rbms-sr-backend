@@ -275,6 +275,12 @@ export const updateSanctionedRequestAvailed = async (id, availed, additionalData
     if (additionalData.overAllStatus) {
         updateData.overAllStatus = additionalData.overAllStatus;
     }
+
+    // Add stationID if it exists
+    if (additionalData.stationID) {
+        updateData.stationID = additionalData.stationID;
+    }
+
     const updatedRequest = await prisma.request.update({
         where: { divisionId: id },
         data: updateData,
@@ -287,6 +293,7 @@ export const updateSanctionedRequestAvailed = async (id, availed, additionalData
             grantedFromTime: true,
             grantedToTime: true,
             overAllStatus: true,
+            stationID: true,
         },
     });
 

@@ -66,6 +66,8 @@ export const createRequestSchema = z.object({
     powerBlockDisconnectionAssignTo: z.string().optional(),
     routeFrom: z.string().optional(),
     routeTo: z.string().optional(),
+    managerAcceptance: z.boolean().optional().default(false),
+    isSanctioned: z.boolean().optional().default(false),
 });
 
 export const updateRequestSchema = createRequestSchema.partial();

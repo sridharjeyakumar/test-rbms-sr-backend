@@ -52,6 +52,7 @@ export const patchSanctionedRequest = async (req, res) => {
             grantedFromTime,
             grantedToTime,
             overAllStatus,
+            stationID,
         } = patchSanctionedRequestSchema.omit({ id: true }).parse(req.body);
 
         const updatedRequest = await updateSanctionedRequestAvailed(id, availed, {
@@ -61,6 +62,7 @@ export const patchSanctionedRequest = async (req, res) => {
             grantedFromTime,
             grantedToTime,
             overAllStatus,
+            stationID,
         });
 
         return successResponse(res, 200, "Sanctioned request updated successfully", updatedRequest);

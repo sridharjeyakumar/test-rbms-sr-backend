@@ -211,6 +211,8 @@ export const fetchSanctionedRequests = async (startDate, endDate, CUG, availedRe
             availedTimeFrom: request.AvailedTimeFrom,
             availedTimeTo: request.AvailedTimeTo,
             userId: request.userId,
+            sntDisconnectionAssignTo: request.sntDisconnectionAssignTo,
+            powerBlockDisconnectionAssignTo: request.powerBlockDisconnectionAssignTo,
             upDrDownOrSL: upOrDownOrSLValues.length > 0 ? upOrDownOrSLValues.join(", ") : undefined,
             roadNumber: roadNumberValues.length > 0 ? roadNumberValues.join(", ") : undefined,
             otherLinesAffected:
@@ -224,6 +226,7 @@ export const fetchSanctionedRequests = async (startDate, endDate, CUG, availedRe
                       applicantMobile: request.user.phone,
                       email: request.user.email || null,
                       department: request.user.department || null,
+                      division: request.user.location,
                   }
                 : null,
         };

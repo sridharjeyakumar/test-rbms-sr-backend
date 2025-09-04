@@ -81,12 +81,15 @@ export const fetchSanctionedRequests = async (startDate, endDate, CUG, availedRe
             AvailedTimeFrom: true,
             AvailedTimeTo: true,
             availedResponse: true,
+            sntDisconnectionAssignTo: true,
+            powerBlockDisconnectionAssignTo: true,
             user: {
                 select: {
                     name: true,
                     phone: true,
                     email: true,
                     department: true,
+                    location: true,
                 },
             },
         },

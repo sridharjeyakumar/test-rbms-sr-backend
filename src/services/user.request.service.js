@@ -136,6 +136,7 @@ export const createRequest = async (data, userId, divisionCode) => {
         "workNature",
         "powerBlockDisconnectionAssignTo",
         "duration",
+        "isSanctioned",
     ];
 
     // Filter out any fields not in allowedFields
@@ -1638,6 +1639,7 @@ export const acceptRequestByManager = async (
             status: isAccept ? "APPROVED" : "REJECTED",
             remarkByManager: remark ?? null,
             overAllStatus,
+            managerResponseTiming: new Date(),
 
             ...(mobileView && {
                 adminRequestStatus: "ACCEPTED",

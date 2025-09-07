@@ -197,6 +197,16 @@ export const createRequest = async (data, userId, divisionCode) => {
     // 9. Generate final ID (format: YYMonthKDivisionLetter#####)
     const divisionId = `${yearPart}${monthChar}${fixedChar}${divisionLetter}${incrementPart}`;
 
+    // Extras. If any of the isSanctioned and managerAcceptance are true, set sanctioned times and manager response timing
+    if (filteredData.isSanctioned === true) {
+        finalData.sanctionedTimeFrom = filteredData.demandTimeFrom;
+        finalData.sanctionedTimeTo = filteredData.demandTimeTo;
+    }
+
+    if (filteredData.managerAcceptance === true) {
+        finalData.managerResponseTiming = now;
+    }
+
     // 10. Create the request with generated ID
     return await prisma.request.create({
         data: {

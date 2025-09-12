@@ -964,3 +964,29 @@ export const getManagerCugRequests = async (req, res) => {
         handleError(error, res);
     }
 };
+
+/**
+ * Edit a user request's time-related fields (date, demandTimeFrom, demandTimeTo)
+ */
+export const editUserRequest = async (req, res) => {
+    try {
+        console.log("Request Body:", req.body); // Debug: Log the request body
+        const { id } = requestValidation.requestIdSchema.parse(req.params);
+        const data = requestValidation.editUserRequestSchema.parse(req.body);
+
+        const result = await requestService.editUserRequest(id, data);
+
+        // Check if there was an error
+        if (result.ok === false) {
+            return res.status(result.status).json({
+                status: false,
+                message: result.message,
+            });
+        }
+
+        return successResponse(res, 200, "Request time fields updated successfully", result);
+    } catch (error) {
+        console.log(error);
+        handleError(error, res);
+    }
+};

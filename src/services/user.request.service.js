@@ -2552,3 +2552,66 @@ export const getManagerCugRequests = async (cugNumber) => {
 
     return manager?.phone || null;
 };
+
+/**
+ * Edit a user request's time-related fields (date, demandTimeFrom, demandTimeTo)
+ * @param {string} requestId - The ID of the request to edit
+ * @param {Object} data - Object containing date, demandTimeFrom, and demandTimeTo
+ * @returns {Promise<Object>} - The updated request
+ */
+export const editUserRequest = async (requestId, data) => {
+    try {
+        // Convert string dates to Date objects
+        const updateData = {
+            date: new Date(data.date),
+            demandTimeFrom: new Date(data.demandTimeFrom),
+            demandTimeTo: new Date(data.demandTimeTo),
+        };
+
+        // Validate that demandTimeTo is after demandTimeFrom
+        if (updateData.demandTimeTo <= updateData.demandTimeFrom) {
+            throw new Error("End time must be after start time");
+        }
+
+        // Update the request
+        const updatedRequest = await prisma.request.update({
+            where: { id: requestId },
+            data: updateData,
+            select: {
+                id: true,
+                divisionId: true,
+                date: true,
+                demandTimeFrom: true,
+                demandTimeTo: true,
+                status: true,
+                createdAt: true,
+                selectedDepartment: true,
+                selectedSection: true,
+                activity: true,
+            },
+        });
+
+        if (!updatedRequest) {
+            throw new Error("Request not found or update failed");
+        }
+
+        return updatedRequest;
+    } catch (error) {
+        console.error("Error in editUserRequest:", error);
+
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+            return {
+                ok: false,
+                status: 500,
+                message: "Database error",
+                code: error.code,
+            };
+        }
+
+        return {
+            ok: false,
+            status: error.message === "End time must be after start time" ? 400 : 500,
+            message: error.message || "Internal server error",
+        };
+    }
+};

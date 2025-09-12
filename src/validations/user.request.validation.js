@@ -84,3 +84,9 @@ export const requestStatusSchema = z.object({
 export const updateOtherRequestSchema = z.object({
     disconnectionRequestRejectRemarks: z.string().optional(),
 });
+
+export const editUserRequestSchema = z.object({
+    date: z.string().datetime().optional(),
+    demandTimeFrom: z.string().datetime().optional(),
+    demandTimeTo: z.string().datetime().optional(),
+});

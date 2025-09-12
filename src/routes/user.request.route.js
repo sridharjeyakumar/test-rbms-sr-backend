@@ -91,6 +91,14 @@ router.put(
     requestController.approveAllPendingRequests,
 );
 
+// New route for editing user request time fields
+router.put(
+    "/manager/edit/:id",
+    authenticateToken,
+    managerMiddleware,
+    requestController.editUserRequest,
+);
+
 router.post(
     "/admin/save-optimized-requests",
     authenticateToken,

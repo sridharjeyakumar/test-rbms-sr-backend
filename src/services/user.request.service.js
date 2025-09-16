@@ -148,6 +148,8 @@ export const createRequest = async (data, userId, divisionCode) => {
         // 1. Use the exact date from frontend request
         const requestDate = new Date(data.date);
         const now = new Date(); // Current timestamp for createdAt
+        const istOffset = 5.5 * 60 * 60 * 1000;
+        const istNow = new Date(now.getTime() + istOffset);
 
         // 2. Get last 2 digits of year
         const yearPart = requestDate.getFullYear().toString().slice(-2);
@@ -216,7 +218,7 @@ export const createRequest = async (data, userId, divisionCode) => {
                 status: filteredData.isSanctioned ? "APPROVED" : "PENDING",
                 divisionId,
                 overAllStatus: "with Dept controller",
-                createdAt: now,
+                createdAt: istNow,
             },
         });
     } catch (error) {

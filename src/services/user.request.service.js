@@ -184,7 +184,7 @@ export const createRequest = async (data, userId, divisionCode) => {
         // 7. Find most recent request for this month+division
         const lastRequest = await prisma.request.findFirst({
             where: {
-                createdAt: { lt: now }, // Only check requests created before this one
+                createdAt: { lt: istNow }, // Only check requests created before this one
                 date: { gte: startOfMonth, lt: endOfMonth },
                 divisionId: {
                     startsWith: `${yearPart}${monthChar}${fixedChar}${divisionLetter}`,
@@ -207,7 +207,7 @@ export const createRequest = async (data, userId, divisionCode) => {
         }
 
         if (filteredData.managerAcceptance === true) {
-            filteredData.managerResponseTiming = now;
+            filteredData.managerResponseTiming = istNow;
         }
 
         // 10. Create the request with generated ID

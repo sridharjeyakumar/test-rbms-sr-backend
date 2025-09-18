@@ -1656,7 +1656,7 @@ export const acceptRequestByManager = async (
             status: isAccept ? "APPROVED" : "REJECTED",
             remarkByManager: remark ?? null,
             overAllStatus,
-            managerResponseTiming: new Date(),
+            managerResponseTiming: new Date(Date.now() + 5.5 * 60 * 60 * 1000),
 
             ...(mobileView && {
                 adminRequestStatus: "ACCEPTED",

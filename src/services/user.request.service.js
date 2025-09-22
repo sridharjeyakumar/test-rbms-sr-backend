@@ -204,6 +204,13 @@ export const createRequest = async (data, userId, divisionCode) => {
         if (filteredData.isSanctioned === true) {
             filteredData.sanctionedTimeFrom = filteredData.demandTimeFrom;
             filteredData.sanctionedTimeTo = filteredData.demandTimeTo;
+            filteredData.DisconnAcceptance = "ACCEPTED";
+            filteredData.sigActionsNeeded = true;
+            filteredData.trdActionsNeeded = true;
+            filteredData.adminAcceptance = true;
+            filteredData.adminAcceptanceId = "SYSTEM";
+            filteredData.optimizeStatus = true;
+            filteredData.userAcceptanceForSanction = true;
         }
 
         if (filteredData.managerAcceptance === true) {
@@ -217,7 +224,7 @@ export const createRequest = async (data, userId, divisionCode) => {
                 userId,
                 status: filteredData.isSanctioned ? "APPROVED" : "PENDING",
                 divisionId,
-                overAllStatus: "with Dept controller",
+                overAllStatus: filteredData.isSanctioned ? "Sanctioned" : "with Dept controller",
                 createdAt: istNow,
             },
         });

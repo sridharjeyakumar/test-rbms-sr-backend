@@ -20,6 +20,7 @@ model User {
   password     String
   phone        String?
   role         Role           @default(USER)
+  fcm_token    String?        
   otps         Otp[]
   RefreshToken RefreshToken[]
   userRequests Request[]      @relation("UserToRequests")

@@ -8,26 +8,27 @@ datasource db {
 }
 
 model User {
-  id           String         @id @default(uuid())
-  name         String
-  email        String         @unique
-  adminId      String?
-  createdAt    DateTime       @default(now())
-  department   String?
-  depot        String
-  location     String
-  managerId    String?
-  password     String
-  phone        String?
-  role         Role           @default(USER)
-  fcm_token    String?        
-  otps         Otp[]
-  RefreshToken RefreshToken[]
-  userRequests Request[]      @relation("UserToRequests")
-  admin        User?          @relation("AdminToManagers", fields: [adminId], references: [id])
-  managers     User[]         @relation("AdminToManagers")
-  manager      User?          @relation("ManagerToUsers", fields: [managerId], references: [id])
-  manages      User[]         @relation("ManagerToUsers")
+  id            String         @id @default(uuid())
+  name          String
+  email         String         @unique
+  adminId       String?
+  createdAt     DateTime       @default(now())
+  department    String?
+  depot         String
+  location      String
+  managerId     String?
+  password      String
+  phone         String?
+  role          Role           @default(USER)
+  fcm_token     String?
+  otps          Otp[]
+  RefreshToken  RefreshToken[]
+  userRequests  Request[]      @relation("UserToRequests")
+  availedBlocks Request[]      @relation("AvailedByUser")
+  admin         User?          @relation("AdminToManagers", fields: [adminId], references: [id])
+  managers      User[]         @relation("AdminToManagers")
+  manager       User?          @relation("ManagerToUsers", fields: [managerId], references: [id])
+  manages       User[]         @relation("ManagerToUsers")
 
   @@index([email])
   @@index([role])
@@ -72,7 +73,7 @@ model Request {
   sigActionsNeeded                  Boolean?   @default(true)
   trdActionsNeeded                  Boolean?   @default(true)
   ManagerResponse                   String?
-  managerResponseTiming             DateTime?   
+  managerResponseTiming             DateTime?
   sigDisconnectionRequirements      String?
   sntDisconnectionRequirements      Json?
   sntDisconnectionLine              String?
@@ -114,7 +115,9 @@ model Request {
   workNature                        String?
   grantedFromTime                   DateTime?
   grantedToTime                     DateTime?
+  availedById                       String?
   user                              User?      @relation("UserToRequests", fields: [userId], references: [id])
+  availedBy                         User?      @relation("AvailedByUser", fields: [availedById], references: [id])
   overAllStatus                     String?
   emergencyBlockRemarks             String?
   sanctionedRemarks                 String?

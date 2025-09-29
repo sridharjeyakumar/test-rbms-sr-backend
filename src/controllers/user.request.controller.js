@@ -244,7 +244,7 @@ export const getUserRequests = async (req, res) => {
             startDate,
             endDate,
         );
-        return successResponse(res, 200, "User requests retrieved successfully", result);
+        return successResponse(res, 200, "User and team requests retrieved successfully", result);
     } catch (error) {
         handleError(error, res);
     }
@@ -970,7 +970,6 @@ export const getManagerCugRequests = async (req, res) => {
  */
 export const editUserRequest = async (req, res) => {
     try {
-        console.log("Request Body:", req.body); // Debug: Log the request body
         const { id } = requestValidation.requestIdSchema.parse(req.params);
         const data = requestValidation.editUserRequestSchema.parse(req.body);
 

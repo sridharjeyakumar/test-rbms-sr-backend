@@ -22,6 +22,8 @@ export const patchSanctionedRequestSchema = z.object({
     overAllStatus: z.string().optional(),
     // Station ID field
     stationID: z.string().optional(),
+    // Phone number (CUG) of the person who availed the block
+    availedCug: z.string().optional(),
 });
 
 export const updateTrainArrivalSchema = z.object({

@@ -83,6 +83,16 @@ export const fetchSanctionedRequests = async (startDate, endDate, CUG, availedRe
             availedResponse: true,
             sntDisconnectionAssignTo: true,
             powerBlockDisconnectionAssignTo: true,
+            availedById: true,
+            availedBy: {
+                select: {
+                    name: true,
+                    phone: true,
+                    email: true,
+                    department: true,
+                    location: true,
+                },
+            },
             user: {
                 select: {
                     name: true,
@@ -251,7 +261,20 @@ export const updateSanctionedRequestAvailed = async (id, availed, additionalData
     // Prepare update data
     const updateData = {
         availedResponse: String(availed),
+        availedById: null, // Default to null, will update if CUG is provided
     };
+
+    // Find user by phone/CUG if provided
+    if (additionalData.availedCug) {
+        const user = await prisma.user.findFirst({
+            where: { phone: additionalData.availedCug },
+            select: { id: true },
+        });
+
+        if (user) {
+            updateData.availedById = user.id;
+        }
+    }
 
     // Handle availed=true case
     if (availed === true) {
@@ -281,7 +304,6 @@ export const updateSanctionedRequestAvailed = async (id, availed, additionalData
     if (additionalData.overAllStatus) {
         updateData.overAllStatus = additionalData.overAllStatus;
     }
-
     // Add stationID if it exists
     if (additionalData.stationID) {
         updateData.stationID = additionalData.stationID;
@@ -300,6 +322,17 @@ export const updateSanctionedRequestAvailed = async (id, availed, additionalData
             grantedToTime: true,
             overAllStatus: true,
             stationID: true,
+            availedById: true,
+            availedBy: {
+                select: {
+                    id: true,
+                    name: true,
+                    phone: true,
+                    department: true,
+                    role: true,
+                    location: true,
+                },
+            },
         },
     });
 

@@ -414,9 +414,21 @@ export const generateHqReport = async (startDate, endDate, blockTypes, majorSect
             // totalSanctioned > 0 ? parseFloat(((totalAvailed / totalSanctioned) * 100).toFixed(2)) : 0;
             totalGranted > 0 ? parseFloat(((totalAvailed / totalGranted) * 100).toFixed(2)) : 0;
 
+        // Count unique mission blocks
+        const uniqueMissionBlocks = new Set();
+        requests.forEach((req) => {
+            if (req.missionBlock) {
+                // Split by comma if there are multiple blocks listed
+                const blocks = req.missionBlock.split(",").map((block) => block.trim());
+                blocks.forEach((block) => uniqueMissionBlocks.add(block));
+            }
+        });
+
         return {
             Department: section, // Using section name instead of location
             TotalRequests: requests.length,
+            MissionBlockCount: uniqueMissionBlocks.size,
+            MissionBlocks: Array.from(uniqueMissionBlocks),
             Demanded: totalDemanded,
             Approved: totalSanctioned,
             Granted: totalGranted,
@@ -499,9 +511,20 @@ export const generateHqReport = async (startDate, endDate, blockTypes, majorSect
             // totalSanctioned > 0 ? parseFloat(((totalAvailed / totalSanctioned) * 100).toFixed(2)) : 0;
             totalGranted > 0 ? parseFloat(((totalAvailed / totalGranted) * 100).toFixed(2)) : 0;
 
+        // Count unique mission blocks for all filtered requests
+        const uniqueMissionBlocks = new Set();
+        filteredRequests.forEach((req) => {
+            if (req.missionBlock) {
+                // Split by comma if there are multiple blocks listed
+                const blocks = req.missionBlock.split(",").map((block) => block.trim());
+                blocks.forEach((block) => uniqueMissionBlocks.add(block));
+            }
+        });
+
         pastBlockSummary.push({
             Department: location || "All Locations",
             TotalRequests: filteredRequests.length,
+            MissionBlockCount: uniqueMissionBlocks.size, // Count of unique mission blocks
             Demanded: totalDemanded,
             Approved: totalSanctioned,
             Granted: totalGranted,
@@ -542,6 +565,7 @@ export const generateHqReport = async (startDate, endDate, blockTypes, majorSect
             demandTimeFrom: true,
             demandTimeTo: true,
             corridorType: true,
+            stationID: true,
             status: true,
             sanctionedTimeFrom: true,
             sanctionedTimeTo: true,
@@ -567,6 +591,7 @@ export const generateHqReport = async (startDate, endDate, blockTypes, majorSect
             MissionBlock: req.missionBlock,
             DivisionId: req.divisionId,
             Duration: durationInHours.toFixed(2),
+            stationId: req.stationID,
             Type: req.corridorType,
             Status: req.status,
             overAllStatus: req.overAllStatus,
@@ -576,6 +601,8 @@ export const generateHqReport = async (startDate, endDate, blockTypes, majorSect
             DemandedTimeTo: req.demandTimeTo,
             SanctionedTimeFrom: req.sanctionedTimeFrom,
             SanctionedTimeTo: req.sanctionedTimeTo,
+            AvailedTimeFrom: req.AvailedTimeFrom,
+            AvailedTimeTo: req.AvailedTimeTo,
         };
     });
 

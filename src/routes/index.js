@@ -8,6 +8,7 @@ import openRoutes from "./open.route.js";
 import drmRoute from "./drm.route.js";
 import hqRoute from "./hq.route.js";
 import userGrRoute from "./user.gr.route.js";
+import notificationRoute from "./notification.route.js";
 
 const router = express.Router();
 
@@ -18,5 +19,6 @@ router.use("/open", openRoutes);
 router.use("/drm", drmRoute);
 router.use("/hq", hqRoute);
 router.use("/user-gr", userGrRoute);
+router.use("/notifications", notificationRoute);
 
 export default router;

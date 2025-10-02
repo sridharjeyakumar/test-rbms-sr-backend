@@ -1117,7 +1117,9 @@ export const getManagerUsersRequests = async (
                     managerId: senior_Ids,
                     role: "JUNIOR_OFFICER",
                 });
-                userIds = await getUserIds({ managerId: junior_Ids, role: "USER" });
+                const sse_Ids = await getUserIds({ managerId: junior_Ids, role: "USER" });
+                const je_Ids = await getUserIds({ managerId: sse_Ids, role: "JE" });
+                userIds = [...sse_Ids, ...je_Ids];
                 break;
 
             case "SENIOR_OFFICER":

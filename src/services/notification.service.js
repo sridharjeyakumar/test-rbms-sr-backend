@@ -26,15 +26,30 @@ export const registerToken = async (userId, token) => {
 /**
  * Get FCM tokens for users with a specific role
  * @param {string} role - The role to filter users by
+ * @param {string} department - Optional department to filter by
+ * @param {string} location - Optional location to filter by
  * @returns {Promise<string[]>} - Array of FCM tokens
  */
-export const getTokensByRole = async (role) => {
+export const getTokensByRole = async (role, department, location) => {
     try {
+        // Build where clause based on provided filters
+        const whereClause = {
+            role,
+            fcm_token: { not: null },
+        };
+
+        // Add department filter if provided
+        if (department) {
+            whereClause.department = department;
+        }
+
+        // Add location filter if provided
+        if (location) {
+            whereClause.location = location;
+        }
+
         const users = await prisma.user.findMany({
-            where: {
-                role,
-                fcm_token: { not: null },
-            },
+            where: whereClause,
             select: { fcm_token: true },
         });
 
@@ -59,13 +74,24 @@ export const notifyDeptControllerForUrgentRequest = async (request) => {
             return { success: true, message: "Request is not urgent, no notification sent" };
         }
 
-        // Get tokens for DEPT_CONTROLLER role
-        const tokens = await getTokensByRole("DEPT_CONTROLLER");
+        // Get user information to filter department controllers with the same department and location
+        const user = await prisma.user.findUnique({
+            where: { id: request.userId },
+            select: { department: true, location: true },
+        });
+
+        if (!user) {
+            return { success: false, message: "User not found" };
+        }
+
+        // Get tokens for DEPT_CONTROLLER role with matching department and location
+        const tokens = await getTokensByRole("DEPT_CONTROLLER", user.department, user.location);
 
         if (!tokens || tokens.length === 0) {
             return {
                 success: false,
-                message: "No department controllers with FCM tokens available",
+                message:
+                    "No department controllers with FCM tokens available for this department and location",
             };
         }
 
@@ -106,11 +132,24 @@ export const notifyAdminsForAcceptedUrgentRequest = async (request) => {
             };
         }
 
-        // Get tokens for ADMIN role
-        const tokens = await getTokensByRole("ADMIN");
+        // Get user information to filter admins with the same department
+        const user = await prisma.user.findUnique({
+            where: { id: request.userId },
+            select: { department: true },
+        });
+
+        if (!user) {
+            return { success: false, message: "User not found" };
+        }
+
+        // Get tokens for ADMIN role with matching department
+        const tokens = await getTokensByRole("ADMIN", user.department);
 
         if (!tokens || tokens.length === 0) {
-            return { success: false, message: "No admins with FCM tokens available" };
+            return {
+                success: false,
+                message: "No admins with FCM tokens available for this department",
+            };
         }
 
         // Send notification

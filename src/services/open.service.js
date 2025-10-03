@@ -35,9 +35,66 @@ export const fetchSanctionedRequests = async (startDate, endDate, CUG, availedRe
     }
 
     if (CUG) {
-        where.user = {
-            phone: CUG,
-        };
+        // First, find the user by phone number
+        const user = await prisma.user.findFirst({
+            where: { phone: CUG },
+            select: { id: true, role: true, managerId: true },
+        });
+
+        if (user) {
+            const userIds = [user.id];
+
+            // If user is of role USER, find JEs under them
+            if (user.role === "USER") {
+                const jeUsers = await prisma.user.findMany({
+                    where: {
+                        managerId: user.id,
+                        role: "JE",
+                    },
+                    select: { id: true },
+                });
+
+                // Add JE IDs to the userIds array
+                userIds.push(...jeUsers.map((je) => je.id));
+            }
+
+            // If user is of role JE, find their manager with role USER and fellow JEs
+            if (user.role === "JE") {
+                const manager = await prisma.user.findFirst({
+                    where: {
+                        id: user.managerId,
+                        role: "USER",
+                    },
+                    select: { id: true },
+                });
+
+                if (manager) {
+                    // Add the manager's ID
+                    userIds.push(manager.id);
+
+                    // Find all fellow JEs who report to the same USER manager
+                    const fellowJEs = await prisma.user.findMany({
+                        where: {
+                            managerId: manager.id,
+                            role: "JE",
+                            id: { not: user.id }, // Exclude the current JE
+                        },
+                        select: { id: true },
+                    });
+
+                    // Add fellow JE IDs to the userIds array
+                    userIds.push(...fellowJEs.map((je) => je.id));
+                }
+            }
+
+            // Update the where clause to include all collected user IDs
+            where.userId = { in: userIds };
+        } else {
+            // If no user found with this CUG, maintain original behavior
+            where.user = {
+                phone: CUG,
+            };
+        }
     }
 
     const requests = await prisma.request.findMany({
@@ -100,6 +157,7 @@ export const fetchSanctionedRequests = async (startDate, endDate, CUG, availedRe
                     email: true,
                     department: true,
                     location: true,
+                    role: true,
                 },
             },
         },
@@ -237,6 +295,7 @@ export const fetchSanctionedRequests = async (startDate, endDate, CUG, availedRe
                       email: request.user.email || null,
                       department: request.user.department || null,
                       division: request.user.location,
+                      role: request.user.role || null,
                   }
                 : null,
         };

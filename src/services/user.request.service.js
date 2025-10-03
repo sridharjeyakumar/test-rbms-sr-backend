@@ -1430,7 +1430,7 @@ export const getAdminPendingRequests = async (
     };
 
     // 1) Gather all User IDs under this Admin's hierarchy:
-    //    Admin → Branch Officers → Senior Officers → Junior Officers → Users
+    //    Admin → Branch Officers → Senior Officers → Junior Officers → Users → JEs
     const branchRecs = await prisma.user.findMany({
         where: { adminId, role: "DEPT_CONTROLLER" },
         select: { id: true },
@@ -1439,7 +1439,10 @@ export const getAdminPendingRequests = async (
 
     const seniorIds = await fetchChildIds(branchIds, "SENIOR_OFFICER");
     const juniorIds = await fetchChildIds(seniorIds, "JUNIOR_OFFICER");
-    const userIds = await fetchChildIds(juniorIds, "USER");
+    const sseIds = await fetchChildIds(juniorIds, "USER");
+    const jeIds = await fetchChildIds(sseIds, "JE");
+    const userIds = [...sseIds, ...jeIds];
+
     // 2) Build where clause for requests
     const whereClause = {
         userId: { in: userIds },
@@ -1960,13 +1963,13 @@ export const getUsersByAdminId = async (adminId, page = 1, limit = 10, startDate
 
     const seniorIds = await fetchChildIds(branchIds, "SENIOR_OFFICER");
     const juniorIds = await fetchChildIds(seniorIds, "JUNIOR_OFFICER");
-    const sse_ids = await fetchChildIds(juniorIds, "USER");
+    const sseIds = await fetchChildIds(juniorIds, "USER");
 
     // Get JE users who report to regular users
-    const je_ids = await fetchChildIds(sse_ids, "JE");
+    const jeIds = await fetchChildIds(sseIds, "JE");
 
     // Combine regular users and JEs
-    const userIds = [...sse_ids, ...je_ids];
+    const userIds = [...sseIds, ...jeIds];
 
     // Convert date range
     const startDateTime = startDate ? new Date(startDate + "T00:00:00.000Z") : undefined;

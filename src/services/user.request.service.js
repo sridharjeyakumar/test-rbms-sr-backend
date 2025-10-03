@@ -1960,7 +1960,13 @@ export const getUsersByAdminId = async (adminId, page = 1, limit = 10, startDate
 
     const seniorIds = await fetchChildIds(branchIds, "SENIOR_OFFICER");
     const juniorIds = await fetchChildIds(seniorIds, "JUNIOR_OFFICER");
-    const userIds = await fetchChildIds(juniorIds, "USER");
+    const sse_ids = await fetchChildIds(juniorIds, "USER");
+
+    // Get JE users who report to regular users
+    const je_ids = await fetchChildIds(sse_ids, "JE");
+
+    // Combine regular users and JEs
+    const userIds = [...sse_ids, ...je_ids];
 
     // Convert date range
     const startDateTime = startDate ? new Date(startDate + "T00:00:00.000Z") : undefined;

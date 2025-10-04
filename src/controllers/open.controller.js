@@ -53,6 +53,11 @@ export const patchSanctionedRequest = async (req, res) => {
             grantedToTime,
             overAllStatus,
             availedCug,
+            sntDisconnectionAvailedTimeFrom,
+            sntDisconnectionAvailedTimeTo,
+            trdDisconnectionAvailedTimeFrom,
+            trdDisconnectionAvailedTimeTo,
+            isGranted,
         } = patchSanctionedRequestSchema.omit({ id: true }).parse(req.body);
 
         const updatedRequest = await updateSanctionedRequestAvailed(id, availed, {
@@ -63,6 +68,11 @@ export const patchSanctionedRequest = async (req, res) => {
             grantedToTime,
             overAllStatus,
             availedCug,
+            sntDisconnectionAvailedTimeFrom,
+            sntDisconnectionAvailedTimeTo,
+            trdDisconnectionAvailedTimeFrom,
+            trdDisconnectionAvailedTimeTo,
+            isGranted,
         });
 
         return successResponse(res, 200, "Sanctioned request updated successfully", updatedRequest);

@@ -105,6 +105,11 @@ model Request {
   sanctionedTimeTo                  DateTime?
   AvailedTimeFrom                   DateTime?
   AvailedTimeTo                     DateTime?
+  SntDisconnectionAvailedTimeFrom   DateTime?
+  SntDisconnectionAvailedTimeTo     DateTime?
+  TrdDisconnectionAvailedTimeFrom   DateTime?
+  TrdDisconnectionAvailedTimeTo     DateTime?
+  isGranted                         Boolean?   @default(false)
   availedRemarks                    String?
   sntDisconnectionAssignTo          String?
   trdDisconnectionAssignTo          String?

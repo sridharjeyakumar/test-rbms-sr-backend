@@ -24,6 +24,14 @@ export const patchSanctionedRequestSchema = z.object({
     stationID: z.string().optional(),
     // Phone number (CUG) of the person who availed the block
     availedCug: z.string().optional(),
+    // SNT disconnection availed times
+    sntDisconnectionAvailedTimeFrom: z.string().optional(),
+    sntDisconnectionAvailedTimeTo: z.string().optional(),
+    // TRD disconnection availed times
+    trdDisconnectionAvailedTimeFrom: z.string().optional(),
+    trdDisconnectionAvailedTimeTo: z.string().optional(),
+    // Is granted flag
+    isGranted: z.boolean().optional(),
 });
 
 export const updateTrainArrivalSchema = z.object({

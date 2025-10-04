@@ -992,3 +992,44 @@ export const editUserRequest = async (req, res) => {
         handleError(error, res);
     }
 };
+
+// Controller to get summary requests from user's section (excluding the user's own requests)
+export const getSectionSummaryRequests = async (req, res) => {
+    try {
+        const userId = req.params.userId || req.user.id;
+        const selectedSection = req.params.selectedSection;
+        console.log(selectedSection);
+
+        // Verify that a section was provided
+        if (!selectedSection) {
+            return res.status(400).json({
+                status: false,
+                message: "selectedSection parameter is required",
+            });
+        }
+
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const startDate = req.query.startDate;
+        const endDate = req.query.endDate;
+
+        const result = await requestService.getSectionSummaryRequests(
+            userId,
+            selectedSection,
+            page,
+            limit,
+            startDate,
+            endDate,
+        );
+
+        return successResponse(
+            res,
+            200,
+            `Summary requests for section ${selectedSection} retrieved successfully`,
+            result,
+        );
+    } catch (error) {
+        console.log(error);
+        handleError(error, res);
+    }
+};

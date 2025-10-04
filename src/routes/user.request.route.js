@@ -53,6 +53,13 @@ router.put(
 // Get other requests
 router.get("/other/:selectedDepo", authenticateToken, requestController.getOtherRequests);
 
+// Get summary requests for a user's section (excluding the user's own requests)
+router.get(
+    "/summary-requests/:selectedSection",
+    authenticateToken,
+    requestController.getSectionSummaryRequests,
+);
+
 // Update other request
 router.put("/other/:id", authenticateToken, requestController.updateOtherRequest);
 

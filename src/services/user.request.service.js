@@ -2777,3 +2777,61 @@ export const editUserRequest = async (requestId, data) => {
         };
     }
 };
+
+// New function to get summary requests for a user's section (excluding the user's own requests)
+export const getSectionSummaryRequests = async (
+    userId,
+    selectedSection,
+    page = 1,
+    limit = 10,
+    startDate,
+    endDate,
+) => {
+    const skip = (page - 1) * limit;
+
+    // Build the where clause for the section's requests excluding the user's own
+    const whereClause = {
+        selectedSection: selectedSection,
+        isSanctioned: true,
+        userId: {
+            not: userId, // Exclude the current user's requests
+        },
+        ...(startDate &&
+            endDate && {
+                date: {
+                    gte: new Date(startDate),
+                    lte: new Date(endDate),
+                },
+            }),
+    };
+
+    // Get requests and count in parallel for efficiency
+    const [requests, total] = await Promise.all([
+        prisma.request.findMany({
+            where: whereClause,
+            include: {
+                user: {
+                    select: {
+                        name: true,
+                        email: true,
+                        department: true,
+                    },
+                },
+            },
+            orderBy: { createdAt: "desc" },
+            skip,
+            take: limit,
+        }),
+        prisma.request.count({
+            where: whereClause,
+        }),
+    ]);
+
+    return {
+        requests,
+        total,
+        page,
+        totalPages: Math.ceil(total / limit),
+        selectedSection,
+    };
+};

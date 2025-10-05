@@ -414,27 +414,27 @@ export const generateHqReport = async (startDate, endDate, blockTypes, majorSect
             // totalSanctioned > 0 ? parseFloat(((totalAvailed / totalSanctioned) * 100).toFixed(2)) : 0;
             totalGranted > 0 ? parseFloat(((totalAvailed / totalGranted) * 100).toFixed(2)) : 0;
 
-        // Count unique mission blocks
-        const uniqueMissionBlocks = new Set();
-        requests.forEach((req) => {
-            if (req.missionBlock) {
-                // Split by comma if there are multiple blocks listed
-                const blocks = req.missionBlock.split(",").map((block) => block.trim());
-                blocks.forEach((block) => uniqueMissionBlocks.add(block));
-            }
-        });
+        // Count the number of blocks by status
+        const demandsCount = requests.length; // All requests are demands
+        const approvedCount = requests.filter((req) => req.isSanctioned === true).length;
+        const availedCount = requests.filter(
+            (req) => req.AvailedTimeFrom && req.AvailedTimeTo,
+        ).length;
 
         return {
             Department: section, // Using section name instead of location
             TotalRequests: requests.length,
-            MissionBlockCount: uniqueMissionBlocks.size,
-            MissionBlocks: Array.from(uniqueMissionBlocks),
+            MissionBlocks: requests.MissionBlocks,
             Demanded: totalDemanded,
             Approved: totalSanctioned,
             Granted: totalGranted,
             Availed: totalAvailed,
             PercentGranted: percentGranted,
             PercentAvailed: percentAvailed,
+            // Adding block counts
+            DemandsCount: demandsCount,
+            ApprovedCount: approvedCount,
+            AvailedCount: availedCount,
         };
     });
 
@@ -511,25 +511,25 @@ export const generateHqReport = async (startDate, endDate, blockTypes, majorSect
             // totalSanctioned > 0 ? parseFloat(((totalAvailed / totalSanctioned) * 100).toFixed(2)) : 0;
             totalGranted > 0 ? parseFloat(((totalAvailed / totalGranted) * 100).toFixed(2)) : 0;
 
-        // Count unique mission blocks for all filtered requests
-        const uniqueMissionBlocks = new Set();
-        filteredRequests.forEach((req) => {
-            if (req.missionBlock) {
-                // Split by comma if there are multiple blocks listed
-                const blocks = req.missionBlock.split(",").map((block) => block.trim());
-                blocks.forEach((block) => uniqueMissionBlocks.add(block));
-            }
-        });
+        // Count the number of blocks by status
+        const demandsCount = filteredRequests.length; // All requests are demands
+        const approvedCount = filteredRequests.filter((req) => req.isSanctioned === true).length;
+        const availedCount = filteredRequests.filter(
+            (req) => req.AvailedTimeFrom && req.AvailedTimeTo,
+        ).length;
 
         pastBlockSummary.push({
             Department: location || "All Locations",
             TotalRequests: filteredRequests.length,
-            MissionBlockCount: uniqueMissionBlocks.size, // Count of unique mission blocks
             Demanded: totalDemanded,
             Approved: totalSanctioned,
             Granted: totalGranted,
             PercentGranted: percentGranted,
             PercentAvailed: percentAvailed,
+            // Adding block counts
+            DemandsCount: demandsCount,
+            ApprovedCount: approvedCount,
+            AvailedCount: availedCount,
         });
     }
 

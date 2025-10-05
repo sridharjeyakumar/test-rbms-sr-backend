@@ -182,6 +182,7 @@ enum Role {
   HQ
   JE
   SM
+  BOARD_CONTROLLER
 }
 
 enum Acceptance {

@@ -408,7 +408,7 @@ export const getTrdRequests = async (req, res) => {
 export const updateOtherRequest = async (req, res) => {
     try {
         const { id } = requestValidation.requestIdSchema.parse(req.params);
-        const { disconnectionRequestRejectRemarks } =
+        const { disconnectionRequestRejectRemarks, acceptRemarks } =
             requestValidation.updateOtherRequestSchema.parse(req.body);
         const { userDepartement, mobileView } = req.body;
         const acceptance = req.query.accept === "true";
@@ -422,6 +422,8 @@ export const updateOtherRequest = async (req, res) => {
             });
         }
 
+        // For acceptance, we need to know which department-specific remarks field to update
+        // If accepting, provide the acceptRemarks to be stored in the appropriate field based on department
         const request = await requestService.updateOtherRequest(
             id,
             acceptance,
@@ -429,6 +431,7 @@ export const updateOtherRequest = async (req, res) => {
             userDepartement,
             mobileView,
             location,
+            acceptRemarks,
         );
         return successResponse(res, 200, "Request updated successfully", request);
     } catch (error) {

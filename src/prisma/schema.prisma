@@ -121,6 +121,8 @@ model Request {
   overAllStatus                     String?
   emergencyBlockRemarks             String?
   sanctionedRemarks                 String?
+  sntAcceptRemarks                  String?
+  trdAcceptRemarks                  String?
   duration                          DateTime?
 
   @@index([userId])

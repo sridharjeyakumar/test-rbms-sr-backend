@@ -83,6 +83,7 @@ export const requestStatusSchema = z.object({
 
 export const updateOtherRequestSchema = z.object({
     disconnectionRequestRejectRemarks: z.string().optional(),
+    acceptRemarks: z.string().optional(), // For storing department-specific accept remarks
 });
 
 export const editUserRequestSchema = z.object({

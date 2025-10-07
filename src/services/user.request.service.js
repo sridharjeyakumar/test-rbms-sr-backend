@@ -903,162 +903,168 @@ export const updateOtherRequest = async (
     userDepartement,
     mobileView,
     location,
+    acceptRemarks,
 ) => {
-    console.log(acceptance ? "ACCEPTED" : "REJECTED");
+    try {
+        console.log(acceptance ? "ACCEPTED" : "REJECTED");
 
-    const request = await prisma.request.findUnique({
-        where: { id },
-        select: {
-            managerAcceptance: true,
-            sigActionsNeeded: true,
-            sigResponse: true,
-            oheResponse: true,
-            trdActionsNeeded: true,
-            sntDisconnectionRequired: true,
-            powerBlockRequired: true,
-            remarkByManager: true,
-            isSanctioned: true,
-            optimizeStatus: true,
-        },
-    });
+        const request = await prisma.request.findUnique({
+            where: { id },
+            select: {
+                managerAcceptance: true,
+                sigActionsNeeded: true,
+                sigResponse: true,
+                oheResponse: true,
+                trdActionsNeeded: true,
+                sntDisconnectionRequired: true,
+                powerBlockRequired: true,
+                remarkByManager: true,
+                isSanctioned: true,
+                optimizeStatus: true,
+                sntAcceptRemarks: true,
+                trdAcceptRemarks: true,
+                disconnectionRequestRejectRemarks: true,
+            },
+        });
 
-    if (!request) {
-        return { ok: false, status: 404, message: "Request not found" };
-    }
+        if (!request) {
+            return { ok: false, status: 404, message: "Request not found" };
+        }
 
-    let updatedSigActionsNeeded = request.sigActionsNeeded;
-    let updatedTrdActionsNeeded = request.trdActionsNeeded;
-    let updatedSigResponse = request.sigResponse;
-    let updatedOheResponse = request.oheResponse;
+        let updatedSigActionsNeeded = request.sigActionsNeeded;
+        let updatedTrdActionsNeeded = request.trdActionsNeeded;
+        let updatedDisconnectionRejectRemarks = request.disconnectionRequestRejectRemarks;
 
-    const updateData = {
-        // disconnectionRequestRejectRemarks:
-        //     !acceptance && mobileView !== "mobileView" ? disconnectionRequestRejectRemarks : null,
-    };
-    if (location === "PGT") {
-        updateData.disconnectionRequestRejectRemarks = disconnectionRequestRejectRemarks;
-    } else {
-        if (!acceptance && mobileView !== "mobileView") {
+        const updateData = {};
+
+        // Handle rejection remarks
+        if (location === "PGT") {
             updateData.disconnectionRequestRejectRemarks = disconnectionRequestRejectRemarks;
+        } else {
+            if (!acceptance && mobileView !== "mobileView") {
+                updateData.disconnectionRequestRejectRemarks = disconnectionRequestRejectRemarks;
+            }
         }
-    }
 
-    if (mobileView === "mobileView") {
-        if (userDepartement === "S&T") {
-            updatedSigActionsNeeded = acceptance;
-            updatedSigResponse = !acceptance ? disconnectionRequestRejectRemarks : "";
-            updateData.sigActionsNeeded = updatedSigActionsNeeded;
-            updateData.sigResponse = updatedSigResponse;
-        } else if (userDepartement === "TRD") {
-            updatedTrdActionsNeeded = acceptance;
-            updatedOheResponse = !acceptance ? disconnectionRequestRejectRemarks : "";
-            updateData.trdActionsNeeded = updatedTrdActionsNeeded;
-            updateData.oheResponse = updatedOheResponse;
+        // Handle department-specific logic
+        if (mobileView === "mobileView") {
+            if (userDepartement === "S&T") {
+                updatedSigActionsNeeded = acceptance;
+
+                if (acceptance) {
+                    // When S&T accepts, store acceptRemarks in sntAcceptRemarks
+                    updateData.sntAcceptRemarks = acceptRemarks || "Approved by S&T";
+                } else {
+                    updateData.disconnectionRequestRejectRemarks =
+                        disconnectionRequestRejectRemarks;
+                    updatedDisconnectionRejectRemarks = disconnectionRequestRejectRemarks;
+                }
+
+                updateData.sigActionsNeeded = updatedSigActionsNeeded;
+            } else if (userDepartement === "TRD") {
+                updatedTrdActionsNeeded = acceptance;
+
+                if (acceptance) {
+                    // When TRD accepts, store acceptRemarks in trdAcceptRemarks
+                    updateData.trdAcceptRemarks = acceptRemarks || "Approved by TRD";
+                } else {
+                    updateData.disconnectionRequestRejectRemarks =
+                        disconnectionRequestRejectRemarks;
+                    updatedDisconnectionRejectRemarks = disconnectionRequestRejectRemarks;
+                }
+
+                updateData.trdActionsNeeded = updatedTrdActionsNeeded;
+            }
         }
+
+        if (updatedSigActionsNeeded && updatedTrdActionsNeeded) {
+            updateData.DisconnAcceptance = "ACCEPTED";
+        }
+
+        let overAllStatus;
+        // If there are any rejection remarks, set the status to REJECTED
+        if (updatedDisconnectionRejectRemarks && updatedDisconnectionRejectRemarks?.trim() !== "") {
+            updateData.DisconnAcceptance = "REJECTED";
+            // Specify which department is rejecting the request
+            if (userDepartement === "S&T") {
+                overAllStatus = "return to applicant by S&T disconnection";
+            } else if (userDepartement === "TRD") {
+                overAllStatus = "return to applicant by TRD disconnection";
+            } else {
+                overAllStatus = "return to applicant by disconnection";
+            }
+        }
+        // No rejection, handle specific department acceptance cases
+        else if (
+            request.managerAcceptance === true &&
+            updatedSigActionsNeeded === true &&
+            request.sntDisconnectionRequired === true &&
+            updatedTrdActionsNeeded === false &&
+            request.powerBlockRequired === true
+        ) {
+            overAllStatus = "with trd disconnection.";
+        } else if (
+            request.managerAcceptance === true &&
+            updatedSigActionsNeeded === false &&
+            request.sntDisconnectionRequired === true &&
+            updatedTrdActionsNeeded === true &&
+            request.powerBlockRequired === true
+        ) {
+            overAllStatus = "with s&t disconnection.";
+        } else if (
+            request.managerAcceptance === true &&
+            updatedSigActionsNeeded === true &&
+            request.isSanctioned === false &&
+            request.optimizeStatus === false &&
+            request.powerBlockRequired === false
+        ) {
+            overAllStatus = "with optg.";
+        } else if (
+            request.managerAcceptance === true &&
+            updatedTrdActionsNeeded === true &&
+            request.isSanctioned === false &&
+            request.optimizeStatus === false &&
+            request.sntDisconnectionRequired === false
+        ) {
+            overAllStatus = "with optg.";
+        } else if (
+            request.managerAcceptance === true &&
+            updatedTrdActionsNeeded === true &&
+            updatedSigActionsNeeded === true &&
+            request.isSanctioned === false &&
+            request.optimizeStatus === false
+        ) {
+            overAllStatus = "with optg.";
+        }
+
+        if (overAllStatus) {
+            updateData.overAllStatus = overAllStatus;
+        }
+
+        const updated = await prisma.request.update({
+            where: { id },
+            data: updateData,
+        });
+        console.log(updated);
+        return { ok: true, status: 200, data: updated };
+    } catch (error) {
+        console.error("Error in updateOtherRequest:", error);
+
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+            return {
+                ok: false,
+                status: 500,
+                message: "Database error",
+                code: error.code,
+            };
+        }
+
+        return {
+            ok: false,
+            status: 500,
+            message: error.message || "Internal server error",
+        };
     }
-
-    if (updatedSigActionsNeeded && updatedTrdActionsNeeded) {
-        updateData.DisconnAcceptance = "ACCEPTED";
-    }
-
-    let overAllStatus;
-
-    if (
-        request.managerAcceptance === true &&
-        updatedSigActionsNeeded === false &&
-        updatedSigResponse?.trim() !== "" &&
-        request.sntDisconnectionRequired === true
-    ) {
-        updateData.DisconnAcceptance = "REJECTED";
-        overAllStatus = "return to applicant by s&t.";
-    } else if (
-        request.managerAcceptance === false &&
-        request.remarkByManager?.trim() === "" &&
-        updatedSigActionsNeeded === false &&
-        updatedSigResponse?.trim() !== "" &&
-        request.sntDisconnectionRequired === true
-    ) {
-        updateData.DisconnAcceptance = "REJECTED";
-        overAllStatus = "return to applicant by s&t.";
-    } else if (
-        request.managerAcceptance === true &&
-        updatedSigActionsNeeded === true &&
-        request.sntDisconnectionRequired === true &&
-        updatedTrdActionsNeeded === false &&
-        request.powerBlockRequired === true
-    ) {
-        overAllStatus = "with trd disconnection.";
-    } else if (
-        request.managerAcceptance === true &&
-        updatedSigActionsNeeded === false &&
-        request.sntDisconnectionRequired === true &&
-        updatedTrdActionsNeeded === true &&
-        request.powerBlockRequired === true
-    ) {
-        overAllStatus = "with s&t disconnection.";
-    } else if (
-        request.managerAcceptance === true &&
-        updatedOheResponse?.trim() !== "" &&
-        updatedTrdActionsNeeded === false &&
-        request.powerBlockRequired === true
-    ) {
-        updateData.DisconnAcceptance = "REJECTED";
-        overAllStatus = "return to applicant by trd.";
-    } else if (
-        request.managerAcceptance === false &&
-        request.remarkByManager?.trim() === "" &&
-        updatedOheResponse?.trim() !== "" &&
-        updatedTrdActionsNeeded === false &&
-        request.powerBlockRequired === true
-    ) {
-        updateData.DisconnAcceptance = "REJECTED";
-        overAllStatus = "return to applicant by trd.";
-    } else if (
-        request.managerAcceptance === false &&
-        updatedSigActionsNeeded === false &&
-        request.remarkByManager?.trim() === "" &&
-        updatedSigResponse?.trim() !== "" &&
-        updatedOheResponse?.trim() !== "" &&
-        updatedTrdActionsNeeded === false
-    ) {
-        updateData.DisconnAcceptance = "REJECTED";
-        overAllStatus = "return to applicant by s&t and trd.";
-    } else if (
-        request.managerAcceptance === true &&
-        updatedSigActionsNeeded === true &&
-        request.isSanctioned === false &&
-        request.optimizeStatus === false &&
-        request.powerBlockRequired === false
-    ) {
-        overAllStatus = "with optg.";
-    } else if (
-        request.managerAcceptance === true &&
-        updatedTrdActionsNeeded === true &&
-        request.isSanctioned === false &&
-        request.optimizeStatus === false &&
-        request.sntDisconnectionRequired === false
-    ) {
-        overAllStatus = "with optg.";
-    } else if (
-        request.managerAcceptance === true &&
-        updatedTrdActionsNeeded === true &&
-        updatedSigActionsNeeded === true &&
-        request.isSanctioned === false &&
-        request.optimizeStatus === false
-    ) {
-        overAllStatus = "with optg.";
-    }
-
-    if (overAllStatus) {
-        updateData.overAllStatus = overAllStatus;
-    }
-
-    const updated = await prisma.request.update({
-        where: { id },
-        data: updateData,
-    });
-
-    return { ok: true, status: 200, data: updated };
 };
 
 export const getManagerUsersRequests = async (

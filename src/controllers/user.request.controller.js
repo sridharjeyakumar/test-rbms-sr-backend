@@ -408,7 +408,7 @@ export const getTrdRequests = async (req, res) => {
 export const updateOtherRequest = async (req, res) => {
     try {
         const { id } = requestValidation.requestIdSchema.parse(req.params);
-        const { disconnectionRequestRejectRemarks } =
+        const { disconnectionRequestRejectRemarks, acceptRemarks } =
             requestValidation.updateOtherRequestSchema.parse(req.body);
         const { userDepartement, mobileView } = req.body;
         const acceptance = req.query.accept === "true";
@@ -422,6 +422,8 @@ export const updateOtherRequest = async (req, res) => {
             });
         }
 
+        // For acceptance, we need to know which department-specific remarks field to update
+        // If accepting, provide the acceptRemarks to be stored in the appropriate field based on department
         const request = await requestService.updateOtherRequest(
             id,
             acceptance,
@@ -429,6 +431,7 @@ export const updateOtherRequest = async (req, res) => {
             userDepartement,
             mobileView,
             location,
+            acceptRemarks,
         );
         return successResponse(res, 200, "Request updated successfully", request);
     } catch (error) {
@@ -984,6 +987,47 @@ export const editUserRequest = async (req, res) => {
         }
 
         return successResponse(res, 200, "Request time fields updated successfully", result);
+    } catch (error) {
+        console.log(error);
+        handleError(error, res);
+    }
+};
+
+// Controller to get summary requests from user's section (excluding the user's own requests)
+export const getSectionSummaryRequests = async (req, res) => {
+    try {
+        const userId = req.params.userId || req.user.id;
+        const selectedSection = req.params.selectedSection;
+        console.log(selectedSection);
+
+        // Verify that a section was provided
+        if (!selectedSection) {
+            return res.status(400).json({
+                status: false,
+                message: "selectedSection parameter is required",
+            });
+        }
+
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const startDate = req.query.startDate;
+        const endDate = req.query.endDate;
+
+        const result = await requestService.getSectionSummaryRequests(
+            userId,
+            selectedSection,
+            page,
+            limit,
+            startDate,
+            endDate,
+        );
+
+        return successResponse(
+            res,
+            200,
+            `Summary requests for section ${selectedSection} retrieved successfully`,
+            result,
+        );
     } catch (error) {
         console.log(error);
         handleError(error, res);

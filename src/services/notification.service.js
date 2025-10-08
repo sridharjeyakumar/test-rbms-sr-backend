@@ -95,8 +95,8 @@ export const notifyDeptControllerForUrgentRequest = async (request) => {
             };
         }
 
-        // Send notification
-        return await sendNotificationToMultipleTokens(
+        // Send notification to DEPT_CONTROLLER
+        const deptControllerResult = await sendNotificationToMultipleTokens(
             tokens,
             {
                 title: "Urgent Request Created",
@@ -108,6 +108,16 @@ export const notifyDeptControllerForUrgentRequest = async (request) => {
                 createdAt: new Date().toISOString(),
             },
         );
+
+        // Also send notifications to S&T and TRD users if needed
+        const departmentUsersResult = await notifyDepartmentUsersForUrgentRequest(request);
+
+        return {
+            success: true,
+            deptControllerResult,
+            departmentUsersResult,
+            message: "Notifications sent to department controllers and relevant department users",
+        };
     } catch (error) {
         console.error("Error sending notification to department controllers:", error);
         return { success: false, error };
@@ -171,9 +181,107 @@ export const notifyAdminsForAcceptedUrgentRequest = async (request) => {
     }
 };
 
+/**
+ * Notify S&T and TRD department users about urgent requests that require their action
+ * @param {object} request - The request object
+ * @returns {Promise} - The result of sending the notifications
+ */
+export const notifyDepartmentUsersForUrgentRequest = async (request) => {
+    try {
+        // Only proceed if this is an urgent request
+        if (request.corridorType !== "Urgent Block") {
+            return { success: true, message: "Request is not urgent, no notification sent" };
+        }
+
+        // Get the name of the user who created the request
+        const requestingUser = await prisma.user.findUnique({
+            where: { id: request.userId },
+            select: { name: true },
+        });
+
+        if (!requestingUser) {
+            return { success: false, message: "Requesting user not found" };
+        }
+
+        const results = [];
+
+        // Check if S&T notification is needed
+        if (request.sntDisconnectionRequired === true && request.sntDisconnectionAssignTo) {
+            // Get users with S&T department in the specific depot from sntDisconnectionAssignTo
+            const sntUsers = await prisma.user.findMany({
+                where: {
+                    department: "S&T",
+                    depot: request.sntDisconnectionAssignTo,
+                    fcm_token: { not: null },
+                },
+                select: { fcm_token: true },
+            });
+
+            const sntTokens = sntUsers.map((user) => user.fcm_token).filter((token) => token);
+
+            if (sntTokens.length > 0) {
+                const sntResult = await sendNotificationToMultipleTokens(
+                    sntTokens,
+                    {
+                        title: "Urgent Block Request Requires S&T Action",
+                        body: `Urgent request from ${requestingUser.name} requires S&T disconnection for ${request.missionBlock}`,
+                    },
+                    {
+                        requestId: request.id,
+                        type: "urgent_snt_request",
+                        createdAt: new Date().toISOString(),
+                    },
+                );
+                results.push({ department: "S&T", result: sntResult });
+            }
+        }
+
+        // Check if TRD notification is needed
+        if (request.powerBlockRequired === true && request.powerBlockDisconnectionAssignTo) {
+            // Get users with TRD department in the specific depot from powerBlockDisconnectionAssignTo
+            const trdUsers = await prisma.user.findMany({
+                where: {
+                    department: "TRD",
+                    depot: request.powerBlockDisconnectionAssignTo,
+                    fcm_token: { not: null },
+                },
+                select: { fcm_token: true },
+            });
+
+            const trdTokens = trdUsers.map((user) => user.fcm_token).filter((token) => token);
+
+            if (trdTokens.length > 0) {
+                const trdResult = await sendNotificationToMultipleTokens(
+                    trdTokens,
+                    {
+                        title: "Urgent Block Request Requires TRD Action",
+                        body: `Urgent request from ${requestingUser.name} requires power block for ${request.missionBlock}`,
+                    },
+                    {
+                        requestId: request.id,
+                        type: "urgent_trd_request",
+                        createdAt: new Date().toISOString(),
+                    },
+                );
+                results.push({ department: "TRD", result: trdResult });
+            }
+        }
+
+        return {
+            success: true,
+            results: results,
+            message: `Sent notifications to relevant departments: ${results.length > 0 ? results.map((r) => r.department).join(", ") : "none"}`,
+        };
+    } catch (error) {
+        console.error("Error sending notification to department users:", error);
+        return { success: false, error };
+    }
+};
+
 export default {
     registerToken,
     getTokensByRole,
     notifyDeptControllerForUrgentRequest,
     notifyAdminsForAcceptedUrgentRequest,
+    notifyDepartmentUsersForUrgentRequest,
 };

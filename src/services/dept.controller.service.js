@@ -153,6 +153,12 @@ export const createUser = async (userData, deptControllerId) => {
     // Hash the password
     const hashedPassword = await hashPassword(userData.depot);
 
+    // Get department from deptController
+    const deptController = await prisma.user.findUnique({
+        where: { id: deptControllerId },
+        select: { department: true },
+    });
+
     // Create the new USER
     const newUser = await prisma.user.create({
         data: {
@@ -161,6 +167,7 @@ export const createUser = async (userData, deptControllerId) => {
             location: userData.depot,
             managerId: deptControllerId,
             password: hashedPassword,
+            department: deptController?.department || null,
         },
     });
 
@@ -207,6 +214,12 @@ export const createJE = async (jeData, deptControllerId) => {
     // Hash the password
     const hashedPassword = await hashPassword(jeData.depot);
 
+    // Get department from deptController
+    const deptController = await prisma.user.findUnique({
+        where: { id: deptControllerId },
+        select: { department: true },
+    });
+
     // Create the new JE
     const newJE = await prisma.user.create({
         data: {
@@ -214,6 +227,7 @@ export const createJE = async (jeData, deptControllerId) => {
             role: "JE",
             location: jeData.depot,
             password: hashedPassword,
+            department: deptController?.department || null,
         },
     });
 

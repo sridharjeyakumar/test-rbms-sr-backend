@@ -125,6 +125,7 @@ export const deleteJE = async (req, res) => {
         const result = await deptControllerService.deleteJE(jeId, deptControllerId);
         return successResponse(res, 200, result.message, result);
     } catch (error) {
+        console.log(error);
         handleError(error, res);
     }
 };

@@ -92,10 +92,13 @@ export const getAllUsers = async (deptControllerId) => {
 
     allUsers = [...allUsers, ...directUsers];
 
-    // Sort all users by creation date
-    allUsers.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    // Filter out users with depot === 'OVERALL'
+    const filteredUsers = allUsers.filter((u) => u.depot !== "OVERALL");
 
-    return allUsers.map(formatUserData);
+    // Sort by creation date
+    filteredUsers.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    return filteredUsers.map(formatUserData);
 };
 
 // Get all JE role users under a specific USER
@@ -297,12 +300,11 @@ export const updateJE = async (jeId, updateData, deptControllerId) => {
             where: {
                 id: updateData.managerId,
                 role: "USER",
-                managerId: deptControllerId,
             },
         });
 
         if (!newManager) {
-            throw new Error("New manager not found or is not under your department");
+            throw new Error("New manager not found");
         }
     }
 
@@ -391,11 +393,6 @@ export const deleteJE = async (jeId, deptControllerId) => {
 
     if (!je) {
         throw new Error("JE not found");
-    }
-
-    // Verify that this JE is under a USER that is managed by this DEPT_CONTROLLER
-    if (!je.manager || je.manager.managerId !== deptControllerId) {
-        throw new Error("JE is not under your department");
     }
 
     // Delete the JE

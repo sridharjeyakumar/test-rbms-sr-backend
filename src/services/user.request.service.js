@@ -920,6 +920,7 @@ export const updateOtherRequest = async (
                 powerBlockRequired: true,
                 remarkByManager: true,
                 isSanctioned: true,
+                status: true,
                 optimizeStatus: true,
                 sntAcceptRemarks: true,
                 trdAcceptRemarks: true,
@@ -929,6 +930,17 @@ export const updateOtherRequest = async (
 
         if (!request) {
             return { ok: false, status: 404, message: "Request not found" };
+        }
+
+        // Reject Validation
+        if (request.status === "REJECTED") {
+            await prisma.request.update({
+                where: { id },
+                data: {
+                    DisconnAcceptance: "REJECTED",
+                },
+            });
+            return { ok: true, status: 208, data: [] };
         }
 
         let updatedSigActionsNeeded = request.sigActionsNeeded;
@@ -985,6 +997,7 @@ export const updateOtherRequest = async (
         // If there are any rejection remarks, set the status to REJECTED
         if (updatedDisconnectionRejectRemarks && updatedDisconnectionRejectRemarks?.trim() !== "") {
             updateData.DisconnAcceptance = "REJECTED";
+            updateData.status = "REJECTED";
             // Specify which department is rejecting the request
             if (userDepartement === "S&T") {
                 overAllStatus = "return to applicant by S&T disconnection";
@@ -1045,7 +1058,6 @@ export const updateOtherRequest = async (
             where: { id },
             data: updateData,
         });
-        console.log(updated);
         return { ok: true, status: 200, data: updated };
     } catch (error) {
         console.error("Error in updateOtherRequest:", error);
@@ -1637,6 +1649,7 @@ export const acceptRequestByManager = async (
                 oheResponse: true,
                 trdActionsNeeded: true,
                 DisconnAcceptance: true,
+                status: true,
                 sntDisconnectionRequired: true,
                 powerBlockRequired: true,
                 isSanctioned: true,
@@ -1646,6 +1659,18 @@ export const acceptRequestByManager = async (
 
         if (!request) {
             return { ok: false, status: 404, message: "Request not found" };
+        }
+
+        // Reject Validation
+        if (request.status === "REJECTED") {
+            await prisma.request.update({
+                where: { id: request.id },
+                data: {
+                    managerAcceptance: false,
+                    managerAcceptanceId: "NOT MANAGER",
+                },
+            });
+            return { ok: true, status: 208, data: [] };
         }
 
         const managerRecord = await prisma.user.findUnique({
@@ -1794,7 +1819,7 @@ export const acceptRequestByManager = async (
         const data = {
             managerAcceptance: isAccept,
             managerAcceptanceId: managerId,
-            status: isAccept ? "APPROVED" : "REJECTED",
+            status: isAccept ? "MANAGER" : "REJECTED",
             remarkByManager: remark ?? null,
             overAllStatus,
             managerResponseTiming: new Date(Date.now() + 5.5 * 60 * 60 * 1000),
@@ -1931,11 +1956,25 @@ export const acceptRequestByAdmin = async (
         throw new Error("Request not found");
     }
 
+    // Reject Validation
+    if (request.status === "REJECTED") {
+        await prisma.request.update({
+            where: { id },
+            data: {
+                adminAcceptance: false,
+                adminAcceptanceId: "NOT ADMIN",
+                adminRequestStatus: "REJECTED",
+            },
+        });
+        return { ok: true, status: 208, data: [] };
+    }
+
     const updateData = {
         adminAcceptance: acceptance,
         adminAcceptanceId: adminId,
         adminRequestStatus: acceptance ? "ACCEPTED" : "REJECTED",
         overAllStatus: acceptance ? "Sanctioned" : "return to applicant by optg",
+        status: acceptance ? "APPROVED" : "REJECTED",
     };
 
     // Add remark to remarkByManager column if mobileView is true and remark exists

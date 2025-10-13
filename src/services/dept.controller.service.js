@@ -176,19 +176,17 @@ export const createUser = async (userData, deptControllerId) => {
 
 // Create a new JE under USER
 export const createJE = async (jeData, deptControllerId) => {
-    // First verify that the managerId (USER) belongs to a USER role and is under this DEPT_CONTROLLER
+    // First verify that the managerId (USER) belongs to a USER role
     const user = await prisma.user.findFirst({
         where: {
             id: jeData.managerId,
             role: "USER",
-            managerId: deptControllerId,
         },
     });
 
     if (!user) {
-        throw new Error("User not found or is not under your department");
+        throw new Error("User not found");
     }
-
     // Check if phone number already exists
     const existingUser = await prisma.user.findFirst({
         where: {
@@ -235,18 +233,17 @@ export const createJE = async (jeData, deptControllerId) => {
 };
 
 // Update a USER
-export const updateUser = async (userId, updateData, deptControllerId) => {
-    // Check if the user exists and is under this DEPT_CONTROLLER
+export const updateUser = async (userId, updateData) => {
+    // Check if the user exists
     const user = await prisma.user.findFirst({
         where: {
             id: userId,
             role: "USER",
-            managerId: deptControllerId,
         },
     });
 
     if (!user) {
-        throw new Error("User not found or is not under your department");
+        throw new Error("User not found");
     }
 
     // Check if updating email and if it already exists
@@ -303,12 +300,6 @@ export const updateJE = async (jeId, updateData, deptControllerId) => {
         throw new Error("JE not found");
     }
 
-    // Verify that this JE is under a USER that is managed by this DEPT_CONTROLLER
-    if (!je.manager || je.manager.managerId !== deptControllerId) {
-        throw new Error("JE is not under your department");
-    }
-
-    // If updating managerId, verify that the new manager is a USER under this DEPT_CONTROLLER
     if (updateData.managerId) {
         const newManager = await prisma.user.findFirst({
             where: {
@@ -360,18 +351,17 @@ export const updateJE = async (jeId, updateData, deptControllerId) => {
 };
 
 // Delete a USER (and all JEs under them)
-export const deleteUser = async (userId, deptControllerId) => {
-    // Check if the user exists and is under this DEPT_CONTROLLER
+export const deleteUser = async (userId) => {
+    // Check if the user exists
     const user = await prisma.user.findFirst({
         where: {
             id: userId,
             role: "USER",
-            managerId: deptControllerId,
         },
     });
 
     if (!user) {
-        throw new Error("User not found or is not under your department");
+        throw new Error("User not found");
     }
 
     // Delete all JEs under this USER first

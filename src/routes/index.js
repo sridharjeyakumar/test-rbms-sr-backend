@@ -10,6 +10,7 @@ import hqRoute from "./hq.route.js";
 import userGrRoute from "./user.gr.route.js";
 import notificationRoute from "./notification.route.js";
 import boardControllerRoute from "./board.controller.route.js";
+import deptControllerRoute from "./dept.controller.route.js";
 
 const router = express.Router();
 
@@ -22,5 +23,6 @@ router.use("/hq", hqRoute);
 router.use("/user-gr", userGrRoute);
 router.use("/notifications", notificationRoute);
 router.use("/board-controller", boardControllerRoute);
+router.use("/dept-controller", deptControllerRoute);
 
 export default router;

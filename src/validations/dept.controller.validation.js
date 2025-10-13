@@ -24,7 +24,7 @@ export const createJESchema = z.object({
     email: z.string().email("Invalid email format"),
     phone: z.string().regex(/^[0-9]{10}$/, "Phone number must be 10 digits"),
     depot: z.string().min(1, "Depot is required"),
-    managerId: z.string().uuid("Invalid User ID format"),
+    managerId: z.string(),
 });
 
 // Validation schema for updating USER - using partial

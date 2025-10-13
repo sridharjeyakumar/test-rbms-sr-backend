@@ -71,6 +71,7 @@ export const createJE = async (req, res) => {
         const newJE = await deptControllerService.createJE(jeData, deptControllerId);
         return successResponse(res, 201, "JE created successfully", newJE);
     } catch (error) {
+        console.log(error);
         handleError(error, res);
     }
 };
@@ -80,12 +81,7 @@ export const updateUser = async (req, res) => {
     try {
         const { userId } = req.params;
         const updateData = deptControllerValidation.updateUserSchema.parse(req.body);
-        const deptControllerId = req.user.id;
-        const updatedUser = await deptControllerService.updateUser(
-            userId,
-            updateData,
-            deptControllerId,
-        );
+        const updatedUser = await deptControllerService.updateUser(userId, updateData);
         return successResponse(res, 200, "User updated successfully", updatedUser);
     } catch (error) {
         handleError(error, res);
@@ -95,12 +91,13 @@ export const updateUser = async (req, res) => {
 // Update a JE
 export const updateJE = async (req, res) => {
     try {
+        console.log(req.body.managerId);
         const { jeId } = req.params;
         const updateData = deptControllerValidation.updateJESchema.parse(req.body);
-        const deptControllerId = req.user.id;
-        const updatedJE = await deptControllerService.updateJE(jeId, updateData, deptControllerId);
+        const updatedJE = await deptControllerService.updateJE(jeId, updateData);
         return successResponse(res, 200, "JE updated successfully", updatedJE);
     } catch (error) {
+        console.log(error);
         handleError(error, res);
     }
 };

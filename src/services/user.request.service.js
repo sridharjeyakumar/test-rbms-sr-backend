@@ -1819,7 +1819,7 @@ export const acceptRequestByManager = async (
         const data = {
             managerAcceptance: isAccept,
             managerAcceptanceId: managerId,
-            status: isAccept ? "MANAGER" : "REJECTED",
+            status: isAccept ? "APPROVED" : "REJECTED",
             remarkByManager: remark ?? null,
             overAllStatus,
             managerResponseTiming: new Date(Date.now() + 5.5 * 60 * 60 * 1000),

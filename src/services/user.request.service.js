@@ -231,13 +231,29 @@ export const createRequest = async (data, userId, divisionCode) => {
             },
         });
 
-        // Send notification if the request is urgent
+        // Notify all USERs in selectedSection depot
+        try {
+            await notificationService.notifyUsersInSelectedSection(createdRequest);
+        } catch (notificationError) {
+            console.error("Failed to notify users in selectedSection depot:", notificationError);
+        }
+
+        // Notify DEPT_CONTROLLERs for S&T/TRD disconnections if required
+        try {
+            await notificationService.notifyDeptControllersForDisconnections(createdRequest);
+        } catch (notificationError) {
+            console.error(
+                "Failed to notify DEPT_CONTROLLERs for disconnections:",
+                notificationError,
+            );
+        }
+
+        // Notify DEPT_CONTROLLER for urgent requests
         if (filteredData.corridorType === "Urgent Block") {
             try {
                 await notificationService.notifyDeptControllerForUrgentRequest(createdRequest);
             } catch (notificationError) {
                 console.error("Failed to send notification:", notificationError);
-                // Don't throw the error as it shouldn't affect the request creation
             }
         }
 

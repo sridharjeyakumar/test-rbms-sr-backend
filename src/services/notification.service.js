@@ -278,10 +278,154 @@ export const notifyDepartmentUsersForUrgentRequest = async (request) => {
     }
 };
 
+/**
+ * Notify all USERs in selectedSection depot when a request is created
+ * @param {object} request - The request object
+ * @returns {Promise}
+ */
+export const notifyUsersInSelectedSection = async (request) => {
+    try {
+        // Dynamically import MajorSectionDepot
+        const { MajorSectionDepot } = await import("../data/store.js");
+        const depots = MajorSectionDepot[request.selectedSection] || [];
+        if (!depots.length)
+            return { success: false, message: "No depots found for selectedSection" };
+
+        // Find all USERs whose depot is in the list
+        const users = await prisma.user.findMany({
+            where: {
+                role: "USER",
+                depot: { in: depots },
+                fcm_token: { not: null },
+            },
+            select: { fcm_token: true },
+        });
+        const tokens = users.map((u) => u.fcm_token).filter(Boolean);
+        if (!tokens.length)
+            return {
+                success: false,
+                message: "No USERs with FCM tokens in selectedSection depots",
+            };
+
+        // Get the name of the user who created the request
+        const requestingUser = await prisma.user.findUnique({
+            where: { id: request.userId },
+            select: { name: true },
+        });
+
+        if (!requestingUser) {
+            return { success: false, message: "Requesting user not found" };
+        }
+
+        return await sendNotificationToMultipleTokens(
+            tokens,
+            {
+                title: `New Request Created in ${request.selectedSection}`,
+                body: `Request for ${request.missionBlock} by ${requestingUser.name}, ${request.selectedDepartment}`,
+            },
+            {
+                requestId: request.id,
+                type: "new_request_section",
+                createdAt: new Date().toISOString(),
+            },
+        );
+    } catch (error) {
+        console.error("Error notifying users in selectedSection depot:", error);
+        return { success: false, error };
+    }
+};
+
+/**
+ * Notify respective DEPT_CONTROLLERs for S&T/TRD disconnections
+ * @param {object} request - The request object
+ * @returns {Promise}
+ */
+export const notifyDeptControllersForDisconnections = async (request) => {
+    try {
+        const results = [];
+        // S&T DEPT_CONTROLLER
+        if (request.sntDisconnectionRequired) {
+            const sntDeptControllerTokens = await getTokensByRole(
+                "DEPT_CONTROLLER",
+                "S&T",
+                request.location,
+            );
+            if (sntDeptControllerTokens.length) {
+                const sntResult = await sendNotificationToMultipleTokens(
+                    sntDeptControllerTokens,
+                    {
+                        title: "S&T Disconnection Required",
+                        body: `Request for ${request.missionBlock} requires S&T disconnection.`,
+                    },
+                    {
+                        requestId: request.id,
+                        type: "snt_disconnection",
+                        createdAt: new Date().toISOString(),
+                    },
+                );
+                results.push({ department: "S&T", result: sntResult });
+            }
+        }
+        // TRD DEPT_CONTROLLER
+        if (request.powerBlockRequired) {
+            const trdDeptControllerTokens = await getTokensByRole(
+                "DEPT_CONTROLLER",
+                "TRD",
+                request.location,
+            );
+            if (trdDeptControllerTokens.length) {
+                const trdResult = await sendNotificationToMultipleTokens(
+                    trdDeptControllerTokens,
+                    {
+                        title: "TRD Disconnection Required",
+                        body: `Request for ${request.missionBlock} requires TRD disconnection.`,
+                    },
+                    {
+                        requestId: request.id,
+                        type: "trd_disconnection",
+                        createdAt: new Date().toISOString(),
+                    },
+                );
+                results.push({ department: "TRD", result: trdResult });
+            }
+        }
+
+        // Also notify the DEPT_CONTROLLER of the request creator's department (except S&T/TRD, e.g., ENGG)
+        if (request.selectedDepartment && !["S&T", "TRD"].includes(request.selectedDepartment)) {
+            const creatorDeptControllerTokens = await getTokensByRole(
+                "DEPT_CONTROLLER",
+                request.selectedDepartment,
+                request.location,
+            );
+            if (creatorDeptControllerTokens.length) {
+                const creatorResult = await sendNotificationToMultipleTokens(
+                    creatorDeptControllerTokens,
+                    {
+                        title: `${request.selectedDepartment} Request Created`,
+                        body: `Request for ${request.missionBlock} created by ${request.selectedDepartment}.`,
+                    },
+                    {
+                        requestId: request.id,
+                        type: "creator_dept_request",
+                        createdAt: new Date().toISOString(),
+                    },
+                );
+                results.push({ department: request.selectedDepartment, result: creatorResult });
+            }
+        }
+        return { success: true, results };
+    } catch (error) {
+        console.error("Error notifying DEPT_CONTROLLERs for disconnections:", error);
+        return { success: false, error };
+    }
+};
+
 export default {
     registerToken,
     getTokensByRole,
     notifyDeptControllerForUrgentRequest,
     notifyAdminsForAcceptedUrgentRequest,
     notifyDepartmentUsersForUrgentRequest,
+    notifyUsersInSelectedSection,
+    notifyDeptControllersForDisconnections,
 };

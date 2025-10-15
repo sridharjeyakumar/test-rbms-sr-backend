@@ -627,6 +627,7 @@ export const generateHqReport = async (
             grantedToTime: true,
             overAllStatus: true,
             activity: true, // Include activity for detailed report
+            selectedDepo: true,
         },
     });
 
@@ -652,6 +653,7 @@ export const generateHqReport = async (
             SanctionedTimeTo: req.sanctionedTimeTo,
             AvailedTimeFrom: req.AvailedTimeFrom,
             AvailedTimeTo: req.AvailedTimeTo,
+            selectedDepo: req.selectedDepo,
         };
     });
 

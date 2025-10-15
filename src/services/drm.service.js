@@ -598,6 +598,7 @@ export const generateDrmReport = async (
             isSanctioned: true,
             overAllStatus: true,
             activity: true, // Include activity for detailed report
+            selectedDepo: true,
             user: {
                 select: {
                     location: true,
@@ -622,6 +623,7 @@ export const generateDrmReport = async (
             status: true,
             overAllStatus: true, // Assuming this is the same as status
             activity: true, // Include activity for detailed report
+            selectedDepo: true,
             user: {
                 select: {
                     location: true,
@@ -713,6 +715,7 @@ export const generateDrmReport = async (
         Status: req.status,
         overAllStatus: req.overAllStatus, // Assuming this is the same as status
         Activity: req.activity, // Include activity for detailed report
+        SelectedDepo: req.selectedDepo,
     }));
 
     return {

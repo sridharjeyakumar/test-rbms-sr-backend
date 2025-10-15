@@ -811,12 +811,30 @@ export const getOtherRequests = async (
     if (userDepartement === "S&T") {
         whereClause = {
             sntDisconnectionRequired: true,
-            sntDisconnectionAssignTo: selectedDepo,
+            OR: [
+                {
+                    sntDisconnectionAssignTo: selectedDepo,
+                },
+                {
+                    sntDisconnectionAssignTo: {
+                        contains: selectedDepo,
+                    },
+                },
+            ],
         };
     } else if (userDepartement === "TRD") {
         whereClause = {
             powerBlockRequired: true,
-            powerBlockDisconnectionAssignTo: selectedDepo,
+            OR: [
+                {
+                    powerBlockDisconnectionAssignTo: selectedDepo,
+                },
+                {
+                    powerBlockDisconnectionAssignTo: {
+                        contains: selectedDepo,
+                    },
+                },
+            ],
         };
     }
 

@@ -2751,7 +2751,7 @@ export const userRequestRemarkReject = async (id, remark) => {
         where: { id },
         data: {
             userAcceptanceForSanction: false,
-            isSanctioned: false,
+            // isSanctioned: false,
             userResponse: remark,
         },
     });

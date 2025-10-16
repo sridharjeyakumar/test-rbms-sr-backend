@@ -318,6 +318,7 @@ export const generateHqReport = async (startDate, endDate, blockTypes, majorSect
             grantedFromTime: true,
             grantedToTime: true,
             userId: true,
+            selectedDepo: true,
         },
     });
 
@@ -577,6 +578,7 @@ export const generateHqReport = async (startDate, endDate, blockTypes, majorSect
             overAllStatus: true, // Assuming this is the same as status
             userId: true, // Include userId for filtering
             activity: true, // Include activity for detailed report
+            selectedDepo: true,
         },
     });
 
@@ -603,6 +605,7 @@ export const generateHqReport = async (startDate, endDate, blockTypes, majorSect
             SanctionedTimeTo: req.sanctionedTimeTo,
             AvailedTimeFrom: req.AvailedTimeFrom,
             AvailedTimeTo: req.AvailedTimeTo,
+            selectedDepo: req.selectedDepo,
         };
     });
 

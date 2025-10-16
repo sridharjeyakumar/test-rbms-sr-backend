@@ -146,6 +146,8 @@ export const fetchSanctionedRequests = async (startDate, endDate, CUG, availedRe
             TrdDisconnectionAvailedTimeFrom: true,
             TrdDisconnectionAvailedTimeTo: true,
             isGranted: true,
+            sntDisconnectionRequirements: true,
+            powerBlockRequirements: true,
             availedBy: {
                 select: {
                     name: true,
@@ -287,6 +289,8 @@ export const fetchSanctionedRequests = async (startDate, endDate, CUG, availedRe
             sntDisconnectionAvailedTimeTo: request.SntDisconnectionAvailedTimeTo,
             trdDisconnectionAvailedTimeFrom: request.TrdDisconnectionAvailedTimeFrom,
             trdDisconnectionAvailedTimeTo: request.TrdDisconnectionAvailedTimeTo,
+            sntDisconnectionRequirements: request.sntDisconnectionRequirements,
+            powerBlockRequirements: request.powerBlockRequirements,
             isGranted: request.isGranted,
             userId: request.userId,
             sntDisconnectionAssignTo: request.sntDisconnectionAssignTo,

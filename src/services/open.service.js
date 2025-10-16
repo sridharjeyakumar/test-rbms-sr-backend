@@ -316,6 +316,7 @@ export const updateSanctionedRequestAvailed = async (id, availed, additionalData
         where: { divisionId: id },
         select: {
             isSanctioned: true,
+            isGranted: true,
         },
     });
 
@@ -327,10 +328,19 @@ export const updateSanctionedRequestAvailed = async (id, availed, additionalData
         throw new Error("Cannot update availedResponse for an unsanctioned request");
     }
 
+    const finalIsGranted =
+        additionalData.isGranted !== undefined
+            ? additionalData.isGranted
+            : existingRequest.isGranted;
+
+    if (!finalIsGranted) {
+        throw new Error("Cannot update availedResponse when isGranted is false");
+    }
+
     // Prepare update data
     const updateData = {
         availedResponse: String(availed),
-        availedById: null, // Default to null, will update if CUG is provided
+        availedById: null, // initially null, will update if CUG is provided
     };
 
     // Find user by phone/CUG if provided
@@ -403,7 +413,6 @@ export const updateSanctionedRequestAvailed = async (id, availed, additionalData
             additionalData.trdDisconnectionAvailedTimeTo,
         );
     }
-
     // Update isGranted flag if it exists
     if (additionalData.isGranted !== undefined) {
         updateData.isGranted = additionalData.isGranted;

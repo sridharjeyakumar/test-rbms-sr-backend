@@ -25,6 +25,7 @@ model User {
   RefreshToken  RefreshToken[]
   userRequests  Request[]      @relation("UserToRequests")
   availedBlocks Request[]      @relation("AvailedByUser")
+  requestRejects Request[]      @relation("RejectedByUser")
   admin         User?          @relation("AdminToManagers", fields: [adminId], references: [id])
   managers      User[]         @relation("AdminToManagers")
   manager       User?          @relation("ManagerToUsers", fields: [managerId], references: [id])
@@ -121,8 +122,14 @@ model Request {
   grantedFromTime                   DateTime?
   grantedToTime                     DateTime?
   availedById                       String?
-  user                              User?      @relation("UserToRequests", fields: [userId], references: [id])
-  availedBy                         User?      @relation("AvailedByUser", fields: [availedById], references: [id])
+  user                              User?                @relation("UserToRequests", fields: [userId], references: [id])
+  availedBy                         User?                @relation("AvailedByUser", fields: [availedById], references: [id])
+  rejectedById                     String?
+  rejectedBy                         User?                @relation("RejectedByUser", fields: [rejectedById], references: [id])
+  sntDisconnections                 SntDisconnection[]   
+  trdDisconnections                 TrdDisconnection[]
+  allSntAcceptance                  Acceptance?   @default(PENDING)
+  allTrdAcceptance                  Acceptance?   @default(PENDING)
   overAllStatus                     String?
   emergencyBlockRemarks             String?
   sanctionedRemarks                 String?
@@ -214,4 +221,26 @@ model TrainArrival {
   updatedAt         DateTime  @updatedAt
 
   @@unique([referenceStation, trainNumber])
+}
+
+model SntDisconnection {
+  id          String   @id @default(uuid())
+  requestId   String
+  depot       String
+  status      String    @default("PENDING")
+  remarks     String?
+  approvedAt  DateTime?
+
+  request     Request   @relation(fields: [requestId], references: [id])
+}
+
+model TrdDisconnection {
+  id          String   @id @default(uuid())
+  requestId   String
+  depot       String
+  status      String    @default("PENDING")
+  remarks     String?
+  approvedAt  DateTime?
+
+  request     Request   @relation(fields: [requestId], references: [id])
 }

@@ -329,7 +329,7 @@ export const getOtherRequests = async (req, res) => {
         const limit = parseInt(req.query.limit) || 10;
         const startDate = req.query.startDate;
         const endDate = req.query.endDate;
-        const userDepartement = req.query.userDepartement;
+        const userDepartment = req.query.userDepartment;
 
         if (!req.user || !req.user.email) {
             return res.status(400).json({
@@ -337,17 +337,18 @@ export const getOtherRequests = async (req, res) => {
                 message: "User email unavailable",
             });
         }
+
         const result = await requestService.getOtherRequests(
             selectedDepo,
             page,
             limit,
-            req.user.email,
             startDate,
             endDate,
-            userDepartement,
+            userDepartment,
         );
         return successResponse(res, 200, "Other requests retrieved successfully", result);
     } catch (error) {
+        console.log(error);
         handleError(error, res);
     }
 };
@@ -410,7 +411,7 @@ export const updateOtherRequest = async (req, res) => {
         const { id } = requestValidation.requestIdSchema.parse(req.params);
         const { disconnectionRequestRejectRemarks, acceptRemarks } =
             requestValidation.updateOtherRequestSchema.parse(req.body);
-        const { userDepartement, mobileView } = req.body;
+        const { userDepartment, depot, mobileView } = req.body;
         const acceptance = req.query.accept === "true";
         const location = req.user.location;
 
@@ -428,7 +429,8 @@ export const updateOtherRequest = async (req, res) => {
             id,
             acceptance,
             disconnectionRequestRejectRemarks,
-            userDepartement,
+            userDepartment,
+            depot,
             mobileView,
             location,
             acceptRemarks,

@@ -414,6 +414,7 @@ export const updateOtherRequest = async (req, res) => {
         const { userDepartment, depot, mobileView } = req.body;
         const acceptance = req.query.accept === "true";
         const location = req.user.location;
+        const userId = req.user.id;
 
         // For rejection, remarks are required
         if (!acceptance && !disconnectionRequestRejectRemarks) {
@@ -434,6 +435,7 @@ export const updateOtherRequest = async (req, res) => {
             mobileView,
             location,
             acceptRemarks,
+            userId,
         );
         return successResponse(res, 200, "Request updated successfully", request);
     } catch (error) {

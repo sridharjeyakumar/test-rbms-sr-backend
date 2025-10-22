@@ -487,18 +487,251 @@ function formatDateForQuery(dateStr) {
 //   };
 // };
 
+// export const generateDrmReport = async (
+//     startDate,
+//     endDate,
+//     majorSections, // Always empty (ignored)
+//     departments,
+//     blockTypes,
+//     locations, // ["ALL"] or ["MAS", "SA", etc.]
+// ) => {
+//     // 1. Build the base WHERE clause with user-provided filters
+//     const filters = [];
+
+//     // Date filter (if provided)
+//     if (startDate && endDate) {
+//         const formattedStartDate = formatDateForQuery(startDate);
+//         const formattedEndDate = formatDateForQuery(endDate);
+
+//         if (formattedStartDate && formattedEndDate) {
+//             filters.push({
+//                 date: {
+//                     gte: formattedStartDate,
+//                     lte: formattedEndDate,
+//                 },
+//             });
+//         }
+//     }
+
+//     // Department filter (if provided)
+//     if (departments?.length > 0) {
+//         const mappedDepartments = departments.map((dept) => {
+//             if (dept === "Engineering") return "ENGG";
+//             if (dept === "ST") return "S&T";
+//             return dept;
+//         });
+
+//         filters.push({
+//             selectedDepartment: {
+//                 in: mappedDepartments,
+//             },
+//         });
+//     }
+
+//     // Block type filter (if provided)
+//     // if (blockTypes?.length > 0) {
+//     //     const mappedBlockTypes = blockTypes.map((blockType) => {
+//     //         if (blockType === "Non-corridor") return "Outside Corridor";
+//     //         if (blockType === "Emergency") return "Urgent Block";
+//     //         if (blockType === "Corridor") return "Corridor";
+//     //         return blockType;
+//     //     });
+
+//     //     filters.push({
+//     //         corridorType: {
+//     //             in: mappedBlockTypes,
+//     //         },
+//     //     });
+//     // }
+
+//     // Block type filter (if provided and not "All")
+//     if (blockTypes?.length > 0 && !blockTypes.includes("All")) {
+//         const mappedBlockTypes = blockTypes.map((blockType) => {
+//             if (blockType === "Non-corridor") return "Outside Corridor";
+//             if (blockType === "Emergency") return "Urgent Block";
+//             if (blockType === "Corridor") return "Corridor";
+//             return blockType;
+//         });
+
+//         filters.push({
+//             corridorType: {
+//                 in: mappedBlockTypes,
+//             },
+//         });
+//     }
+
+//     // Location filter (if provided and not "ALL")
+//     let locationFilter = {};
+//     if (locations?.length > 0 && !locations.includes("ALL")) {
+//         locationFilter = {
+//             user: {
+//                 location: {
+//                     in: locations,
+//                 },
+//             },
+//         };
+//     }
+
+//     // Combined WHERE clause
+//     const whereClause = filters.length > 0 ? { AND: [...filters, locationFilter] } : locationFilter;
+
+//     console.log("Final WHERE clause:", JSON.stringify(whereClause, null, 2));
+
+//     // 2. Fetch ALL historical data matching filters with user location
+//     const requestDetails = await prisma.request.findMany({
+//         where: whereClause,
+//         select: {
+//             id: true,
+//             selectedSection: true,
+//             missionBlock: true,
+//             divisionId: true,
+//             demandTimeFrom: true,
+//             demandTimeTo: true,
+//             status: true,
+//             corridorType: true,
+//             sanctionedTimeFrom: true,
+//             sanctionedTimeTo: true,
+//             AvailedTimeFrom: true,
+//             AvailedTimeTo: true,
+//             grantedFromTime: true,
+//             grantedToTime: true,
+//             isSanctioned: true,
+//             overAllStatus: true,
+//             activity: true, // Include activity for detailed report
+//             user: {
+//                 select: {
+//                     location: true,
+//                 },
+//             },
+//         },
+//     });
+
+//     // 3. Fetch data for detailed report (using same filters)
+//     const requestDetailsForReport = await prisma.request.findMany({
+//         where: whereClause,
+//         orderBy: { date: "asc" },
+//         select: {
+//             id: true,
+//             date: true,
+//             selectedSection: true,
+//             divisionId: true,
+//             missionBlock: true,
+//             demandTimeFrom: true,
+//             demandTimeTo: true,
+//             corridorType: true,
+//             status: true,
+//             overAllStatus: true, // Assuming this is the same as status
+//             activity: true, // Include activity for detailed report
+//             user: {
+//                 select: {
+//                     location: true,
+//                 },
+//             },
+//         },
+//     });
+
+//     // 4. Group requests by location for summary
+//     const requestsByLocation = {};
+//     requestDetails.forEach((req) => {
+//         const location = req.user?.location || "Unknown";
+//         if (!requestsByLocation[location]) {
+//             requestsByLocation[location] = [];
+//         }
+//         requestsByLocation[location].push(req);
+//     });
+
+//     // 5. Calculate metrics per location
+//     const pastBlockSummary = Object.entries(requestsByLocation).map(
+//         ([location, locationRequests]) => {
+//             let totalDemanded = 0;
+//             let totalSanctioned = 0;
+//             let totalGranted = 0;
+//             let totalAvailed = 0;
+
+//             locationRequests.forEach((req) => {
+//                 // Calculate demanded hours
+//                 const demandedHours =
+//                     (new Date(req.demandTimeTo) - new Date(req.demandTimeFrom)) / (1000 * 60 * 60);
+//                 totalDemanded += demandedHours < 0 ? demandedHours + 24 : demandedHours;
+
+//                 // Calculate sanctioned hours (if available)
+//                 if (req.isSanctioned && req.sanctionedTimeFrom && req.sanctionedTimeTo) {
+//                     const sanctionedHours =
+//                         (new Date(req.sanctionedTimeTo) - new Date(req.sanctionedTimeFrom)) /
+//                         (1000 * 60 * 60);
+//                     totalSanctioned += sanctionedHours < 0 ? sanctionedHours + 24 : sanctionedHours;
+//                 }
+
+//                 // Calculate granted hours (if available)
+//                 if (req.grantedFromTime && req.grantedToTime) {
+//                     const grantedHours =
+//                         (new Date(req.grantedToTime) - new Date(req.grantedFromTime)) /
+//                         (1000 * 60 * 60);
+//                     totalGranted += grantedHours < 0 ? grantedHours + 24 : grantedHours;
+//                 }
+
+//                 // Calculate availed hours (if available)
+//                 if (req.AvailedTimeFrom && req.AvailedTimeTo) {
+//                     const availedHours =
+//                         (new Date(req.AvailedTimeTo) - new Date(req.AvailedTimeFrom)) /
+//                         (1000 * 60 * 60);
+//                     totalAvailed += availedHours < 0 ? availedHours + 24 : availedHours;
+//                 }
+//             });
+
+//             // Calculate percentages
+//             const percentSanctioned = totalDemanded ? (totalSanctioned / totalDemanded) * 100 : 0;
+//             const percentGranted = totalDemanded ? (totalGranted / totalDemanded) * 100 : 0;
+//             const percentAvailed = totalSanctioned ? (totalAvailed / totalSanctioned) * 100 : 0;
+
+//             return {
+//                 Department: location,
+//                 TotalRequests: locationRequests.length,
+//                 Demanded: parseFloat(totalDemanded.toFixed(2)),
+//                 Approved: parseFloat(totalSanctioned.toFixed(2)),
+//                 Granted: parseFloat(totalGranted.toFixed(2)),
+//                 PercentGranted: parseFloat(percentGranted.toFixed(2)),
+//                 Availed: parseFloat(totalAvailed.toFixed(2)),
+//                 PercentAvailed: parseFloat(percentAvailed.toFixed(2)),
+//             };
+//         },
+//     );
+
+//     // 6. Prepare detailed data (only for selected locations)
+//     const detailedData = requestDetailsForReport.map((req) => ({
+//         id: req.id,
+//         Date: new Date(req.date).toLocaleDateString(),
+//         Section: req.selectedSection,
+//         MissionBlock: req.missionBlock,
+//         DivisionId: req.divisionId,
+//         Location: req.user?.location || "Unknown",
+//         Duration: (
+//             (new Date(req.demandTimeTo) - new Date(req.demandTimeFrom)) /
+//             (1000 * 60 * 60)
+//         ).toFixed(2),
+//         Type: req.corridorType,
+//         Status: req.status,
+//         overAllStatus: req.overAllStatus, // Assuming this is the same as status
+//         Activity: req.activity, // Include activity for detailed report
+//     }));
+
+//     return {
+//         pastBlockSummary,
+//         detailedData,
+//     };
+// };
 export const generateDrmReport = async (
     startDate,
     endDate,
-    majorSections, // Always empty (ignored)
+    majorSections,
     departments,
     blockTypes,
-    locations, // ["ALL"] or ["MAS", "SA", etc.]
+    locations,
 ) => {
-    // 1. Build the base WHERE clause with user-provided filters
+    // 1. Build filters array
     const filters = [];
 
-    // Date filter (if provided)
+    // Date filter
     if (startDate && endDate) {
         const formattedStartDate = formatDateForQuery(startDate);
         const formattedEndDate = formatDateForQuery(endDate);
@@ -513,8 +746,8 @@ export const generateDrmReport = async (
         }
     }
 
-    // Department filter (if provided)
-    if (departments?.length > 0) {
+    // Department filter
+    if (departments && departments.length > 0) {
         const mappedDepartments = departments.map((dept) => {
             if (dept === "Engineering") return "ENGG";
             if (dept === "ST") return "S&T";
@@ -522,30 +755,16 @@ export const generateDrmReport = async (
         });
 
         filters.push({
-            selectedDepartment: {
-                in: mappedDepartments,
-            },
+            selectedDepartment: { in: mappedDepartments },
         });
     }
 
-    // Block type filter (if provided)
-    // if (blockTypes?.length > 0) {
-    //     const mappedBlockTypes = blockTypes.map((blockType) => {
-    //         if (blockType === "Non-corridor") return "Outside Corridor";
-    //         if (blockType === "Emergency") return "Urgent Block";
-    //         if (blockType === "Corridor") return "Corridor";
-    //         return blockType;
-    //     });
-
-    //     filters.push({
-    //         corridorType: {
-    //             in: mappedBlockTypes,
-    //         },
-    //     });
-    // }
-
-    // Block type filter (if provided and not "All")
-    if (blockTypes?.length > 0 && !blockTypes.includes("All")) {
+    // Block type filter
+    if (
+        blockTypes &&
+        blockTypes.length > 0 &&
+        !blockTypes.some((bt) => bt.toUpperCase() === "ALL")
+    ) {
         const mappedBlockTypes = blockTypes.map((blockType) => {
             if (blockType === "Non-corridor") return "Outside Corridor";
             if (blockType === "Emergency") return "Urgent Block";
@@ -554,30 +773,32 @@ export const generateDrmReport = async (
         });
 
         filters.push({
-            corridorType: {
-                in: mappedBlockTypes,
-            },
+            corridorType: { in: mappedBlockTypes },
         });
     }
 
-    // Location filter (if provided and not "ALL")
+    // Normalize locations to uppercase to handle "All"
+    const normalizedLocations = locations.map((loc) => loc.toUpperCase());
+
+    // Location filter
     let locationFilter = {};
-    if (locations?.length > 0 && !locations.includes("ALL")) {
+    if (normalizedLocations.length > 0 && !normalizedLocations.includes("ALL")) {
         locationFilter = {
-            user: {
-                location: {
-                    in: locations,
-                },
-            },
+            user: { location: { in: normalizedLocations } },
         };
     }
 
-    // Combined WHERE clause
-    const whereClause = filters.length > 0 ? { AND: [...filters, locationFilter] } : locationFilter;
+    // Combine filters
+    const whereClause =
+        filters.length > 0
+            ? normalizedLocations.includes("ALL")
+                ? { AND: filters } // no location filter
+                : { AND: [...filters, locationFilter] }
+            : locationFilter;
 
     console.log("Final WHERE clause:", JSON.stringify(whereClause, null, 2));
 
-    // 2. Fetch ALL historical data matching filters with user location
+    // 2. Fetch historical data
     const requestDetails = await prisma.request.findMany({
         where: whereClause,
         select: {
@@ -597,17 +818,12 @@ export const generateDrmReport = async (
             grantedToTime: true,
             isSanctioned: true,
             overAllStatus: true,
-            activity: true, // Include activity for detailed report
-            selectedDepo: true,
-            user: {
-                select: {
-                    location: true,
-                },
-            },
+            activity: true,
+            user: { select: { location: true } },
         },
     });
 
-    // 3. Fetch data for detailed report (using same filters)
+    // 3. Fetch detailed report data
     const requestDetailsForReport = await prisma.request.findMany({
         where: whereClause,
         orderBy: { date: "asc" },
@@ -621,28 +837,21 @@ export const generateDrmReport = async (
             demandTimeTo: true,
             corridorType: true,
             status: true,
-            overAllStatus: true, // Assuming this is the same as status
-            activity: true, // Include activity for detailed report
-            selectedDepo: true,
-            user: {
-                select: {
-                    location: true,
-                },
-            },
+            overAllStatus: true,
+            activity: true,
+            user: { select: { location: true } },
         },
     });
 
-    // 4. Group requests by location for summary
+    // 4. Group requests by location
     const requestsByLocation = {};
     requestDetails.forEach((req) => {
         const location = req.user?.location || "Unknown";
-        if (!requestsByLocation[location]) {
-            requestsByLocation[location] = [];
-        }
+        if (!requestsByLocation[location]) requestsByLocation[location] = [];
         requestsByLocation[location].push(req);
     });
 
-    // 5. Calculate metrics per location
+    // 5. Calculate summary metrics per location
     const pastBlockSummary = Object.entries(requestsByLocation).map(
         ([location, locationRequests]) => {
             let totalDemanded = 0;
@@ -651,12 +860,10 @@ export const generateDrmReport = async (
             let totalAvailed = 0;
 
             locationRequests.forEach((req) => {
-                // Calculate demanded hours
                 const demandedHours =
                     (new Date(req.demandTimeTo) - new Date(req.demandTimeFrom)) / (1000 * 60 * 60);
                 totalDemanded += demandedHours < 0 ? demandedHours + 24 : demandedHours;
 
-                // Calculate sanctioned hours (if available)
                 if (req.isSanctioned && req.sanctionedTimeFrom && req.sanctionedTimeTo) {
                     const sanctionedHours =
                         (new Date(req.sanctionedTimeTo) - new Date(req.sanctionedTimeFrom)) /
@@ -664,7 +871,6 @@ export const generateDrmReport = async (
                     totalSanctioned += sanctionedHours < 0 ? sanctionedHours + 24 : sanctionedHours;
                 }
 
-                // Calculate granted hours (if available)
                 if (req.grantedFromTime && req.grantedToTime) {
                     const grantedHours =
                         (new Date(req.grantedToTime) - new Date(req.grantedFromTime)) /
@@ -672,7 +878,6 @@ export const generateDrmReport = async (
                     totalGranted += grantedHours < 0 ? grantedHours + 24 : grantedHours;
                 }
 
-                // Calculate availed hours (if available)
                 if (req.AvailedTimeFrom && req.AvailedTimeTo) {
                     const availedHours =
                         (new Date(req.AvailedTimeTo) - new Date(req.AvailedTimeFrom)) /
@@ -681,7 +886,6 @@ export const generateDrmReport = async (
                 }
             });
 
-            // Calculate percentages
             const percentSanctioned = totalDemanded ? (totalSanctioned / totalDemanded) * 100 : 0;
             const percentGranted = totalDemanded ? (totalGranted / totalDemanded) * 100 : 0;
             const percentAvailed = totalSanctioned ? (totalAvailed / totalSanctioned) * 100 : 0;
@@ -699,7 +903,7 @@ export const generateDrmReport = async (
         },
     );
 
-    // 6. Prepare detailed data (only for selected locations)
+    // 6. Prepare detailed data
     const detailedData = requestDetailsForReport.map((req) => ({
         id: req.id,
         Date: new Date(req.date).toLocaleDateString(),
@@ -713,9 +917,8 @@ export const generateDrmReport = async (
         ).toFixed(2),
         Type: req.corridorType,
         Status: req.status,
-        overAllStatus: req.overAllStatus, // Assuming this is the same as status
-        Activity: req.activity, // Include activity for detailed report
-        SelectedDepo: req.selectedDepo,
+        overAllStatus: req.overAllStatus,
+        Activity: req.activity,
     }));
 
     return {

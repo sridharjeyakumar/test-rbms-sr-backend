@@ -255,7 +255,7 @@ export const createRequest = async (data, userId, divisionCode) => {
                     status: filteredData.isSanctioned ? "APPROVED" : "PENDING",
                     divisionId,
                     overAllStatus,
-                    createdAt: istNow,
+                    createdAt: now,
                 },
             });
 

@@ -129,6 +129,7 @@ model Request {
   sntAcceptRemarks                  String?
   trdAcceptRemarks                  String?
   duration                          DateTime?
+  isApplied                         Boolean?
 
   @@index([userId])
   @@index([managerAcceptanceId])

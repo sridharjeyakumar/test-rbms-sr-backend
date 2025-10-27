@@ -371,6 +371,8 @@ export const generateHqReport = async (
             isSanctioned: true,
             grantedFromTime: true,
             grantedToTime: true,
+            isGranted: true,
+            isApplied: true,
         },
     });
 
@@ -399,6 +401,7 @@ export const generateHqReport = async (
         let totalSanctioned = 0;
         let totalGranted = 0;
         let totalAvailed = 0;
+        let totalApplied = 0;
 
         requests.forEach((req) => {
             // Calculate demanded hours
@@ -418,6 +421,21 @@ export const generateHqReport = async (
                         ? sanctionedDurationInHours + 24
                         : sanctionedDurationInHours;
                 totalSanctioned += sanctionedDurationInHours;
+            }
+            if (
+                req.isSanctioned &&
+                req.isApplied === true &&
+                req.sanctionedTimeFrom &&
+                req.sanctionedTimeTo
+            ) {
+                let sanctionedDurationInHours =
+                    (new Date(req.sanctionedTimeTo) - new Date(req.sanctionedTimeFrom)) /
+                    (1000 * 60 * 60);
+                sanctionedDurationInHours =
+                    sanctionedDurationInHours < 0
+                        ? sanctionedDurationInHours + 24
+                        : sanctionedDurationInHours;
+                totalApplied += sanctionedDurationInHours;
             }
             // Calculate granted hours (if available)
             if (req.grantedFromTime && req.grantedToTime) {
@@ -446,6 +464,7 @@ export const generateHqReport = async (
 
         totalDemanded = parseFloat(totalDemanded.toFixed(2));
         totalSanctioned = parseFloat(totalSanctioned.toFixed(2));
+        totalApplied = parseFloat(totalApplied.toFixed(2));
         totalGranted = parseFloat(totalGranted.toFixed(2));
         totalAvailed = parseFloat(totalAvailed.toFixed(2));
 
@@ -471,6 +490,8 @@ export const generateHqReport = async (
         const availedCount = requests.filter(
             (req) => req.AvailedTimeFrom && req.AvailedTimeTo,
         ).length;
+        const grantedCount = requests.filter((req) => req.isGranted === true).length;
+        const appliedCount = requests.filter((req) => req.isApplied === true).length;
 
         return {
             Department: section, // Using section name instead of location
@@ -480,12 +501,15 @@ export const generateHqReport = async (
             Approved: totalSanctioned,
             Granted: totalGranted,
             Availed: totalAvailed,
+            Applied: totalApplied,
             PercentGranted: percentGranted,
             PercentAvailed: percentAvailed,
             // Adding block counts
             DemandsCount: demandsCount,
             ApprovedCount: approvedCount,
             AvailedCount: availedCount,
+            GrantedCount: grantedCount,
+            AppliedCount: appliedCount,
         };
     });
 
@@ -617,6 +641,9 @@ export const generateHqReport = async (
             demandTimeTo: true,
             corridorType: true,
             stationID: true,
+            isApplied: true,
+            isGranted: true,
+            isSanctioned: true,
             status: true,
             sanctionedTimeFrom: true,
             sanctionedTimeTo: true,
@@ -643,6 +670,9 @@ export const generateHqReport = async (
             DivisionId: req.divisionId,
             Duration: durationInHours.toFixed(2),
             stationId: req.stationID,
+            isApplied: req.isApplied,
+            isGranted: req.isGranted,
+            isSanctioned: req.isSanctioned,
             Type: req.corridorType,
             Status: req.status,
             overAllStatus: req.overAllStatus,

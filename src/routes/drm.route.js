@@ -5,9 +5,10 @@ import { authenticateToken, DRMorHQMiddleware } from "../middlewares/auth.middle
 const router = Router();
 
 // Apply authentication middleware to all routes
-router.use(authenticateToken);
+// router.use(authenticateToken);
 
 // DRM Report Generation route
-router.get("/generate-report", DRMorHQMiddleware, generateReport);
+// router.get("/generate-report", DRMorHQMiddleware, generateReport);
+router.get("/generate-report", generateReport);
 
 export default router;

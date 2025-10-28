@@ -68,6 +68,9 @@ export const createRequestSchema = z.object({
     routeTo: z.string().optional(),
     managerAcceptance: z.boolean().optional().default(false),
     isSanctioned: z.boolean().optional().default(false),
+    engDisconnectionRequired: z.boolean().optional().default(false),
+    engDisconnectionRemarks: z.string().optional(),
+    engDisconnectionAssignTo: z.string().optional(),
 });
 
 export const updateRequestSchema = createRequestSchema.partial();

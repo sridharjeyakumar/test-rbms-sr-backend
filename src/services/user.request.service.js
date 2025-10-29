@@ -294,15 +294,24 @@ export const createRequest = async (data, userId, divisionCode) => {
         const endOfMonth = new Date(requestDate.getFullYear(), requestDate.getMonth() + 1, 1);
 
         // 7. Find most recent request for this month+division
+        // const lastRequest = await prisma.request.findFirst({
+        //     where: {
+        //         createdAt: { lt: istNow }, // Only check requests created before this one
+        //         date: { gte: startOfMonth, lt: endOfMonth },
+        //         divisionId: {
+        //             startsWith: `${yearPart}${monthChar}${fixedChar}${divisionLetter}`,
+        //         },
+        //     },
+        //     orderBy: { createdAt: "desc" }, // Get the newest one
+        // });
         const lastRequest = await prisma.request.findFirst({
             where: {
-                createdAt: { lt: istNow }, // Only check requests created before this one
                 date: { gte: startOfMonth, lt: endOfMonth },
                 divisionId: {
                     startsWith: `${yearPart}${monthChar}${fixedChar}${divisionLetter}`,
                 },
             },
-            orderBy: { createdAt: "desc" }, // Get the newest one
+            orderBy: { divisionId: "desc" }, // <-- use divisionId, not createdAt
         });
 
         // 8. Determine increment number (now 5 digits)

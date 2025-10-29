@@ -16,8 +16,10 @@ export const calculateOverallStatus = (request, userDepartment = null) => {
         adminAcceptance,
         allSntAcceptance,
         allTrdAcceptance,
+        allEnggAcceptance,
         sntDisconnectionRequired,
         powerBlockRequired,
+        enggDisconnectionsRequired,
         optimizeStatus,
         remarkByManager,
         disconnectionRequestRejectRemarks,
@@ -48,6 +50,8 @@ export const calculateOverallStatus = (request, userDepartment = null) => {
             return "return to applicant by S&T disconnection";
         } else if (userDepartment === "TRD") {
             return "return to applicant by TRD disconnection";
+        } else if (userDepartment === "ENGG") {
+            return "return to applicant by ENGG disconnection";
         }
         return "return to applicant by disconnection";
     }
@@ -60,6 +64,9 @@ export const calculateOverallStatus = (request, userDepartment = null) => {
             statusParts.push("S&T");
         }
 
+        if (enggDisconnectionsRequired && allEnggAcceptance !== "ACCEPTED") {
+            statusParts.push("ENGG");
+        }
         if (powerBlockRequired && allTrdAcceptance !== "ACCEPTED") {
             statusParts.push("TRD");
         }
@@ -78,6 +85,9 @@ export const calculateOverallStatus = (request, userDepartment = null) => {
 
         if (sntDisconnectionRequired && allSntAcceptance !== "ACCEPTED") {
             pendingDepartments.push("S&T");
+        }
+        if (enggDisconnectionsRequired && allEnggAcceptance !== "ACCEPTED") {
+            pendingDepartments.push("ENGG");
         }
 
         if (powerBlockRequired && allTrdAcceptance !== "ACCEPTED") {
@@ -233,10 +243,13 @@ export const createRequest = async (data, userId, divisionCode) => {
             "adminAcceptance",
             "sntDisconnectionAssignTo",
             "trdDisconnectionAssignTo",
+            "engDisconnectionAssignTo",
             "workNature",
             "powerBlockDisconnectionAssignTo",
             "duration",
             "isSanctioned",
+            "enggDisconnectionsRequired",
+            "engDisconnectionRemarks",
         ];
 
         // Filter out any fields not in allowedFields
@@ -308,6 +321,7 @@ export const createRequest = async (data, userId, divisionCode) => {
             // filteredData.trdActionsNeeded = true;
             filteredData.allSntAcceptance = true;
             filteredData.allTrdAcceptance = true;
+            filteredData.allEnggAcceptance = true;
             filteredData.managerAcceptance = true;
             filteredData.managerAcceptanceId = "System";
             filteredData.adminAcceptance = true;
@@ -328,7 +342,9 @@ export const createRequest = async (data, userId, divisionCode) => {
             adminAcceptance: filteredData.adminAcceptance,
             allSntAcceptance: filteredData.allSntAcceptance ? "ACCEPTED" : "PENDING",
             allTrdAcceptance: filteredData.allTrdAcceptance ? "ACCEPTED" : "PENDING",
+            allEnggAcceptance: filteredData.allEnggAcceptance ? "ACCEPTED" : "PENDING",
             sntDisconnectionRequired: filteredData.sntDisconnectionRequired,
+            enggDisconnectionsRequired: filteredData.enggDisconnectionsRequired,
             powerBlockRequired: filteredData.powerBlockRequired,
             optimizeStatus: filteredData.optimizeStatus,
             remarkByManager: null,
@@ -348,7 +364,23 @@ export const createRequest = async (data, userId, divisionCode) => {
                     createdAt: now,
                 },
             });
+            if (filteredData.enggDisconnectionsRequired && filteredData.engDisconnectionAssignTo) {
+                // Split the depot string by comma and process each depot
+                const sntDepots = filteredData.engDisconnectionAssignTo
+                    .split(",")
+                    .map((depot) => depot.trim())
+                    .filter((depot) => depot.length > 0);
 
+                for (const depot of sntDepots) {
+                    await prisma.enggDisconnection.create({
+                        data: {
+                            requestId: request.id,
+                            depot: depot,
+                            status: "PENDING",
+                        },
+                    });
+                }
+            }
             // Create S&T disconnections if required
             if (filteredData.sntDisconnectionRequired && filteredData.sntDisconnectionAssignTo) {
                 // Split the depot string by comma and process each depot
@@ -642,6 +674,15 @@ export const getRequestById = async (id) => {
                 },
             },
             trdDisconnections: {
+                select: {
+                    id: true,
+                    depot: true,
+                    status: true,
+                    remarks: true,
+                    approvedAt: true,
+                },
+            },
+            enggDisconnections: {
                 select: {
                     id: true,
                     depot: true,
@@ -1063,8 +1104,33 @@ export const getOtherRequests = async (
                 depot: selectedDepo,
             },
         };
+    } else if (userDepartment === "ENGG") {
+        whereClause = {
+            OR: [
+                {
+                    enggDisconnections: {
+                        some: {
+                            depot: selectedDepo,
+                        },
+                    },
+                },
+                // Backward compatibility
+                {
+                    AND: [
+                        { enggDisconnectionsRequired: true },
+                        {
+                            OR: [{ engDisconnectionAssignTo: selectedDepo }],
+                        },
+                    ],
+                },
+            ],
+        };
+        includeClause.enggDisconnections = {
+            where: {
+                depot: selectedDepo,
+            },
+        };
     }
-
     // Date filter
     if (startDate && endDate) {
         whereClause.date = {
@@ -1161,6 +1227,7 @@ export const updateOtherRequest = async (
                 oheResponse: true,
                 trdActionsNeeded: true,
                 sntDisconnectionRequired: true,
+                enggDisconnectionsRequired: true,
                 powerBlockRequired: true,
                 remarkByManager: true,
                 isSanctioned: true,
@@ -1183,8 +1250,16 @@ export const updateOtherRequest = async (
                         status: true,
                     },
                 },
+                enggDisconnections: {
+                    select: {
+                        id: true,
+                        depot: true,
+                        status: true,
+                    },
+                },
                 allSntAcceptance: true,
                 allTrdAcceptance: true,
+                allEnggAcceptance: true,
             },
         });
 
@@ -1207,6 +1282,7 @@ export const updateOtherRequest = async (
         let updatedTrdActionsNeeded = request.trdActionsNeeded;
         let updatedAllTrdAcceptance = request.allTrdAcceptance;
         let updatedAllSntAcceptance = request.allSntAcceptance;
+        let updatedAllEnggAcceptance = request.allEnggAcceptance;
         let updatedDisconnectionRejectRemarks = request.disconnectionRequestRejectRemarks;
 
         const updateData = {};
@@ -1282,12 +1358,31 @@ export const updateOtherRequest = async (
                 }
 
                 updateData.trdActionsNeeded = updatedTrdActionsNeeded;
+            } else if (userDepartment === "ENGG") {
+                updatedAllEnggAcceptance = acceptance;
+                // Update disconnection records if they exist (new format)
+                if (request.enggDisconnections && request.enggDisconnections.length > 0) {
+                    await prisma.enggDisconnection.updateMany({
+                        where: {
+                            requestId: id,
+                            depot: depot,
+                        },
+                        data: {
+                            status: acceptance ? "ACCEPTED" : "REJECTED",
+                            remarks: acceptance
+                                ? acceptRemarks || "Approved nby TRD"
+                                : disconnectionRequestRejectRemarks,
+                            approvedAt: acceptance ? new Date() : null,
+                        },
+                    });
+                }
             }
         }
 
         // Check if all disconnections are accepted (with backward compatibility)
         let allSntAccepted = true;
         let allTrdAccepted = true;
+        let allEnggAcceptance = true;
 
         // If disconnection records exist, check their status (new format)
         if (request.sntDisconnections && request.sntDisconnections.length > 0) {
@@ -1307,12 +1402,21 @@ export const updateOtherRequest = async (
             allTrdAccepted = updatedTrdDisconnections.every((d) => d.status === "ACCEPTED");
             updatedAllTrdAcceptance = allTrdAccepted ? "ACCEPTED" : "PENDING";
         }
+        if (request.enggDisconnections && request.enggDisconnections.length > 0) {
+            const updatedEnggDisconnections = await prisma.enggDisconnection.findMany({
+                where: { requestId: id },
+                select: { status: true },
+            });
+            allEnggAcceptance = updatedEnggDisconnections.every((d) => d.status === "ACCEPTED");
+            updatedAllEnggAcceptance = allEnggAcceptance ? "ACCEPTED" : "PENDING";
+        }
 
         if (
             updatedSigActionsNeeded &&
             updatedTrdActionsNeeded &&
             allSntAccepted &&
-            allTrdAccepted
+            allTrdAccepted &&
+            allEnggAcceptance
         ) {
             updateData.DisconnAcceptance = "ACCEPTED";
         }
@@ -1326,6 +1430,7 @@ export const updateOtherRequest = async (
                 adminAcceptance: request.adminAcceptance,
                 allSntAcceptance: updatedAllSntAcceptance,
                 allTrdAcceptance: updatedAllTrdAcceptance,
+                allEnggAcceptance: updatedAllEnggAcceptance,
                 sntDisconnectionRequired: request.sntDisconnectionRequired,
                 powerBlockRequired: request.powerBlockRequired,
                 optimizeStatus: request.optimizeStatus,
@@ -1349,6 +1454,7 @@ export const updateOtherRequest = async (
         // Update the overall acceptance status
         updateData.allSntAcceptance = updatedAllSntAcceptance;
         updateData.allTrdAcceptance = updatedAllTrdAcceptance;
+        updateData.allEnggAcceptance = updatedAllEnggAcceptance;
 
         const updated = await prisma.request.update({
             where: { id },

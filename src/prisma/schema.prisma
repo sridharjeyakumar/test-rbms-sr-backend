@@ -128,8 +128,13 @@ model Request {
   rejectedBy                         User?                @relation("RejectedByUser", fields: [rejectedById], references: [id])
   sntDisconnections                 SntDisconnection[]   
   trdDisconnections                 TrdDisconnection[]
+  enggDisconnections                EnggDisconnection[]
   allSntAcceptance                  Acceptance?   @default(PENDING)
   allTrdAcceptance                  Acceptance?   @default(PENDING)
+  allEnggAcceptance                 Acceptance?   @default(PENDING)
+ enggDisconnectionsRequired         Boolean?     @default(false)
+ engDisconnectionAssignTo           String?
+ engDisconnectionRemarks            String?
   overAllStatus                     String?
   emergencyBlockRemarks             String?
   sanctionedRemarks                 String?
@@ -235,6 +240,16 @@ model SntDisconnection {
 }
 
 model TrdDisconnection {
+  id          String   @id @default(uuid())
+  requestId   String
+  depot       String
+  status      String    @default("PENDING")
+  remarks     String?
+  approvedAt  DateTime?
+
+  request     Request   @relation(fields: [requestId], references: [id])
+}
+model EnggDisconnection {
   id          String   @id @default(uuid())
   requestId   String
   depot       String

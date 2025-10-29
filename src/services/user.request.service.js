@@ -40,7 +40,7 @@ export const calculateOverallStatus = (request, userDepartment = null) => {
         return "return to applicant by Dept controller.";
     }
 
-    if (remarkByManager && adminAcceptance === false) {
+    if (remarkByManager && adminAcceptance === false && adminRequestStatus === "REJECTED") {
         return "return to applicant by optg";
     }
 
@@ -75,8 +75,12 @@ export const calculateOverallStatus = (request, userDepartment = null) => {
     }
 
     // Manager has accepted, check if admin has accepted
-    if (managerAcceptance && adminAcceptance === false) {
-        return "return to applicant by optg";
+    if (
+        managerAcceptance &&
+        adminAcceptance === false &&
+        (adminRequestStatus !== "REJECTED" || adminRequestStatus !== "APPROVED")
+    ) {
+        return " with  optg";
     }
 
     // Manager has accepted, now check what disconnections are still pending

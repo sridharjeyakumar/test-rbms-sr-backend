@@ -143,8 +143,6 @@ model Request {
   duration                          DateTime?
   isApplied                         Boolean?
   engDisconnectionRequired          Boolean?   @default(false)
-  engDisconnectionRemarks           String?
-  engDisconnectionAssignTo          String?
 
   @@index([userId])
   @@index([managerAcceptanceId])

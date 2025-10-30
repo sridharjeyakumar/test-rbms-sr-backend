@@ -79,9 +79,34 @@ export const calculateOverallStatus = (request, userDepartment = null) => {
     if (
         managerAcceptance &&
         adminAcceptance === false &&
-        (adminRequestStatus !== "REJECTED" || adminRequestStatus !== "APPROVED")
+        ((sntDisconnectionRequired === false && remarkByManager?.trim()) ||
+            (sntDisconnectionRequired && allSntAcceptance === "ACCEPTED")) &&
+        adminRequestStatus !== "REJECTED" &&
+        adminRequestStatus !== "APPROVED"
     ) {
-        return " with  optg";
+        return "with optg";
+    }
+
+    if (
+        managerAcceptance &&
+        adminAcceptance === false &&
+        ((enggDisconnectionsRequired === false && remarkByManager?.trim()) ||
+            (enggDisconnectionsRequired && allEnggAcceptance === "ACCEPTED")) &&
+        adminRequestStatus !== "REJECTED" &&
+        adminRequestStatus !== "APPROVED"
+    ) {
+        return "with optg";
+    }
+
+    if (
+        managerAcceptance &&
+        adminAcceptance === false &&
+        ((powerBlockRequired === false && remarkByManager?.trim()) ||
+            (powerBlockRequired && allTrdAcceptance === "ACCEPTED")) &&
+        adminRequestStatus !== "REJECTED" &&
+        adminRequestStatus !== "APPROVED"
+    ) {
+        return "with optg";
     }
 
     // Manager has accepted, now check what disconnections are still pending

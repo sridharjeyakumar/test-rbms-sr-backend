@@ -145,6 +145,8 @@ export const fetchSanctionedRequests = async (startDate, endDate, CUG, availedRe
             SntDisconnectionAvailedTimeTo: true,
             TrdDisconnectionAvailedTimeFrom: true,
             TrdDisconnectionAvailedTimeTo: true,
+            AppliedTimeFrom: true,
+            AppliedTimeTo: true,
             isGranted: true,
             isApplied: true,
             sntDisconnectionRequirements: true,
@@ -289,6 +291,8 @@ export const fetchSanctionedRequests = async (startDate, endDate, CUG, availedRe
             sntDisconnectionAvailedTimeFrom: request.SntDisconnectionAvailedTimeFrom,
             sntDisconnectionAvailedTimeTo: request.SntDisconnectionAvailedTimeTo,
             trdDisconnectionAvailedTimeFrom: request.TrdDisconnectionAvailedTimeFrom,
+            appliedTimeFrom: request.AppliedTimeFrom,
+            appliedTimeTo: request.AppliedTimeTo,
             trdDisconnectionAvailedTimeTo: request.TrdDisconnectionAvailedTimeTo,
             sntDisconnectionRequirements: request.sntDisconnectionRequirements,
             powerBlockRequirements: request.powerBlockRequirements,
@@ -407,6 +411,12 @@ export const updateSanctionedRequestAvailed = async (id, availed, additionalData
         );
     }
 
+    if (additionalData.appliedTimeFrom) {
+        updateData.AppliedTimeFrom = new Date(additionalData.appliedTimeFrom);
+    }
+    if (additionalData.appliedTimeTo) {
+        updateData.AppliedTimeTo = new Date(additionalData.appliedTimeTo);
+    }
     // Add TRD disconnection availed times if they exist
     if (additionalData.trdDisconnectionAvailedTimeFrom) {
         updateData.TrdDisconnectionAvailedTimeFrom = new Date(
@@ -445,6 +455,8 @@ export const updateSanctionedRequestAvailed = async (id, availed, additionalData
             SntDisconnectionAvailedTimeFrom: true,
             SntDisconnectionAvailedTimeTo: true,
             TrdDisconnectionAvailedTimeFrom: true,
+            AppliedTimeFrom: true,
+            AppliedTimeTo: true,
             TrdDisconnectionAvailedTimeTo: true,
             isGranted: true,
             isApplied: true,

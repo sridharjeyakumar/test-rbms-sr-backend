@@ -368,11 +368,16 @@ export const generateHqReport = async (
             sanctionedTimeTo: true,
             AvailedTimeFrom: true,
             AvailedTimeTo: true,
+            AppliedTimeFrom: true,
+            AppliedTimeTo: true,
             isSanctioned: true,
             grantedFromTime: true,
             grantedToTime: true,
             isGranted: true,
             isApplied: true,
+            enggDisconnectionsRequired: true,
+            powerBlockRequired: true,
+            sntDisconnectionRequired: true,
         },
     });
 
@@ -642,6 +647,11 @@ export const generateHqReport = async (
             corridorType: true,
             stationID: true,
             isApplied: true,
+            enggDisconnectionsRequired: true,
+            sntDisconnectionRequired: true,
+            AppliedTimeFrom: true,
+            AppliedTimeTo: true,
+            powerBlockRequired: true,
             isGranted: true,
             isSanctioned: true,
             status: true,
@@ -684,6 +694,12 @@ export const generateHqReport = async (
             AvailedTimeFrom: req.AvailedTimeFrom,
             AvailedTimeTo: req.AvailedTimeTo,
             selectedDepo: req.selectedDepo,
+            enggDisconnectionsRequired: req.enggDisconnectionsRequired,
+            appliedTimeFrom: req.AppliedTimeFrom,
+            appliedTimeTo: req.AppliedTimeTo,
+            powerBlockRequired: req.powerBlockRequired,
+            sntDisconnectionRequired: req.sntDisconnectionRequired,
+            selectedDepartment: req.selectedDepartment,
         };
     });
 

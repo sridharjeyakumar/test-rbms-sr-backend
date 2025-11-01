@@ -142,6 +142,8 @@ model Request {
   trdAcceptRemarks                  String?
   duration                          DateTime?
   isApplied                         Boolean?
+  AppliedTimeFrom                   DateTime?
+  AppliedTimeTo                     DateTime?
   engDisconnectionRequired          Boolean?   @default(false)
 
   @@index([userId])

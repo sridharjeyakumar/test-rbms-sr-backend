@@ -665,6 +665,15 @@ export const generateHqReport = async (
             overAllStatus: true,
             activity: true, // Include activity for detailed report
             selectedDepo: true,
+            user: {
+                // Add this include section
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    role: true,
+                },
+            },
         },
     });
 
@@ -700,6 +709,10 @@ export const generateHqReport = async (
             powerBlockRequired: req.powerBlockRequired,
             sntDisconnectionRequired: req.sntDisconnectionRequired,
             selectedDepartment: req.selectedDepartment,
+            userId: req.user?.id,
+            userName: req.user?.name,
+            userEmail: req.user?.email,
+            userRole: req.user?.role,
         };
     });
 

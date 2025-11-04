@@ -145,6 +145,7 @@ model Request {
   AppliedTimeFrom                   DateTime?
   AppliedTimeTo                     DateTime?
   engDisconnectionRequired          Boolean?   @default(false)
+  tpcRemarks                        String?
 
   @@index([userId])
   @@index([managerAcceptanceId])

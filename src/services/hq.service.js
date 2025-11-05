@@ -674,6 +674,8 @@ export const generateHqReport = async (
                     role: true,
                 },
             },
+            userResponse: true,
+            userAcceptanceForSanction: true,
         },
     });
 
@@ -713,6 +715,8 @@ export const generateHqReport = async (
             userName: req.user?.name,
             userEmail: req.user?.email,
             userRole: req.user?.role,
+            userResponse: req.userResponse,
+            userAcceptanceForSanction: req.userAcceptanceForSanction,
         };
     });
 

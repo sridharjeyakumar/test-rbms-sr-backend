@@ -107,7 +107,8 @@ export const updateOptimizeTimes = async (req, res) => {
 
 export const editRequest = async (req, res) => {
     try {
-        const { requestId, optimizeTimeFrom, optimizeTimeTo, date, mobileView } = req.body;
+        const { requestId, optimizeTimeFrom, optimizeTimeTo, date, mobileView, sanctionedRemark } =
+            req.body;
 
         const updatedRequest = await requestService.editRequest(
             requestId,
@@ -115,6 +116,7 @@ export const editRequest = async (req, res) => {
             optimizeTimeTo,
             date,
             mobileView,
+            sanctionedRemark,
         );
 
         return res.json({
@@ -159,7 +161,39 @@ export const updateSanctionStatus = async (req, res) => {
         });
     }
 };
+// controllers/requestController.js
+export const updateDraftStatus = async (req, res) => {
+    try {
+        const { requests } = req.body;
 
+        if (!Array.isArray(requests)) {
+            return res.status(400).json({
+                message: "Invalid request format. Expected { requests: [...] }",
+            });
+        }
+
+        // Validate each request
+        for (const request of requests) {
+            if (!request.id) {
+                return res.status(400).json({
+                    message: "Each request must contain id",
+                });
+            }
+        }
+
+        const result = await requestService.updateDraftStatus(requests);
+        return res.status(200).json({
+            success: true,
+            data: result,
+        });
+    } catch (error) {
+        console.error("Error in updateDraftStatus:", error);
+        return res.status(500).json({
+            message: "Failed to update draft status",
+            error: error.message,
+        });
+    }
+};
 export const deleteOptimizeDataRequest = async (req, res) => {
     try {
         const { id } = req.params;

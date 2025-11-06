@@ -1541,6 +1541,146 @@ export const updateOtherRequest = async (
     }
 };
 
+// export const getManagerUsersRequests = async (
+//     managerId,
+//     role,
+//     page = 1,
+//     limit,
+//     startDate,
+//     endDate,
+//     status,
+//     departement,
+// ) => {
+//     try {
+//         // Validate inputs
+//         if (page < 1) throw new Error("Page must be at least 1");
+//         if (limit < 1) throw new Error("Limit must be at least 1");
+
+//         const skip = (page - 1) * limit;
+
+//         // Helper to fetch user IDs with a single query
+//         const getUserIds = async ({
+//             managerId: managerIdCondition,
+//             role: targetRole,
+//             field = "managerId",
+//         }) => {
+//             const where = {
+//                 [field]: Array.isArray(managerIdCondition)
+//                     ? { in: managerIdCondition }
+//                     : managerIdCondition,
+//             };
+//             if (targetRole) where.role = targetRole;
+
+//             const users = await prisma.user.findMany({
+//                 where,
+//                 select: { id: true },
+//             });
+
+//             return users.map((user) => user.id);
+//         };
+
+//         // 1. Build the list of USER-IDs under this manager hierarchy
+//         let userIds = [];
+
+//         switch (role) {
+//             case "BRANCH_OFFICER":
+//                 const seniorIds = await getUserIds({ managerId, role: "SENIOR_OFFICER" });
+//                 const juniorIds = await getUserIds({
+//                     managerId: seniorIds,
+//                     role: "JUNIOR_OFFICER",
+//                 });
+//                 userIds = await getUserIds({ managerId: juniorIds, role: "USER" });
+//                 break;
+
+//             case "DEPT_CONTROLLER":
+//                 const senior_Ids = await getUserIds({ managerId, role: "SENIOR_OFFICER" });
+//                 const junior_Ids = await getUserIds({
+//                     managerId: senior_Ids,
+//                     role: "JUNIOR_OFFICER",
+//                 });
+//                 const sse_Ids = await getUserIds({ managerId: junior_Ids, role: "USER" });
+//                 const je_Ids = await getUserIds({ managerId: sse_Ids, role: "JE" });
+//                 userIds = [...sse_Ids, ...je_Ids];
+//                 break;
+
+//             case "SENIOR_OFFICER":
+//                 const juniorOfficerIds = await getUserIds({ managerId, role: "JUNIOR_OFFICER" });
+//                 userIds = await getUserIds({ managerId: juniorOfficerIds, role: "USER" });
+//                 break;
+
+//             case "JUNIOR_OFFICER":
+//                 userIds = await getUserIds({ managerId, role: "USER" });
+//                 break;
+
+//             default:
+//                 throw new Error(`Role ${role} is not supported for this endpoint`);
+//         }
+
+//         // Early return if no users found
+//         if (userIds.length === 0) {
+//             return {
+//                 requests: [],
+//                 total: 0,
+//                 page,
+//                 totalPages: 0,
+//             };
+//         }
+
+//         // 2. Build the where clause for requests
+//         const where = { userId: { in: userIds } };
+
+//         // Date filtering
+//         if (startDate && endDate) {
+//             where.date = {
+//                 gte: new Date(startDate),
+//                 lte: new Date(endDate),
+//             };
+//         } else if (startDate) {
+//             where.date = { gte: new Date(startDate) };
+//         } else if (endDate) {
+//             where.date = { lte: new Date(endDate) };
+//         }
+
+//         // Status filtering
+//         if (status && status !== "ALL") {
+//             where.status = status;
+//         }
+
+//         // 3. Query requests with pagination
+//         const [requests, total] = await Promise.all([
+//             prisma.request.findMany({
+//                 where,
+//                 include: {
+//                     user: {
+//                         select: {
+//                             id: true,
+//                             name: true,
+//                             email: true,
+//                             role: true,
+//                             depot: true,
+//                             department: true,
+//                         },
+//                     },
+//                 },
+//                 orderBy: { createdAt: "desc" },
+//                 skip,
+//                 take: limit,
+//             }),
+//             prisma.request.count({ where }),
+//         ]);
+
+//         return {
+//             requests,
+//             total,
+//             page,
+//             totalPages: Math.ceil(total / limit),
+//         };
+//     } catch (error) {
+//         console.error("Error in getManagerUsersRequests:", error);
+//         throw error;
+//     }
+// };
+
 export const getManagerUsersRequests = async (
     managerId,
     role,
@@ -1549,15 +1689,14 @@ export const getManagerUsersRequests = async (
     startDate,
     endDate,
     status,
+    departement,
 ) => {
     try {
-        // Validate inputs
         if (page < 1) throw new Error("Page must be at least 1");
         if (limit < 1) throw new Error("Limit must be at least 1");
 
         const skip = (page - 1) * limit;
 
-        // Helper to fetch user IDs with a single query
         const getUserIds = async ({
             managerId: managerIdCondition,
             role: targetRole,
@@ -1578,7 +1717,7 @@ export const getManagerUsersRequests = async (
             return users.map((user) => user.id);
         };
 
-        // 1. Build the list of USER-IDs under this manager hierarchy
+        // ------------------- HIERARCHY LOGIC (UNCHANGED) -------------------
         let userIds = [];
 
         switch (role) {
@@ -1615,37 +1754,37 @@ export const getManagerUsersRequests = async (
                 throw new Error(`Role ${role} is not supported for this endpoint`);
         }
 
-        // Early return if no users found
+        // If no users found under hierarchy
         if (userIds.length === 0) {
             return {
                 requests: [],
                 total: 0,
                 page,
                 totalPages: 0,
+                specialDeptRequests: [],
             };
         }
 
-        // 2. Build the where clause for requests
-        const where = { userId: { in: userIds } };
+        // ------------------- DATE & STATUS FILTERS -------------------
+        const dateFilter =
+            startDate || endDate
+                ? {
+                      date: {
+                          ...(startDate && { gte: new Date(startDate) }),
+                          ...(endDate && { lte: new Date(endDate) }),
+                      },
+                  }
+                : {};
 
-        // Date filtering
-        if (startDate && endDate) {
-            where.date = {
-                gte: new Date(startDate),
-                lte: new Date(endDate),
-            };
-        } else if (startDate) {
-            where.date = { gte: new Date(startDate) };
-        } else if (endDate) {
-            where.date = { lte: new Date(endDate) };
-        }
+        const statusFilter = status && status !== "ALL" ? { status } : {};
 
-        // Status filtering
-        if (status && status !== "ALL") {
-            where.status = status;
-        }
+        // ------------------- HIERARCHY BASED REQUESTS -------------------
+        const where = {
+            userId: { in: userIds },
+            ...dateFilter,
+            ...statusFilter,
+        };
 
-        // 3. Query requests with pagination
         const [requests, total] = await Promise.all([
             prisma.request.findMany({
                 where,
@@ -1668,17 +1807,57 @@ export const getManagerUsersRequests = async (
             prisma.request.count({ where }),
         ]);
 
+        // ------------------- SPECIAL DEPT REQUESTS (IGNORES HIERARCHY) -------------------
+        let specialDeptRequests = [];
+
+        if (departement) {
+            let deptCondition = {};
+
+            if (departement === "ENGG") {
+                deptCondition = { enggDisconnectionsRequired: true };
+            } else if (departement === "S&T") {
+                deptCondition = { sntDisconnectionsRequired: true };
+            } else if (departement === "TRD") {
+                deptCondition = { powerBlockRequired: true };
+            }
+
+            specialDeptRequests = await prisma.request.findMany({
+                where: {
+                    ...deptCondition,
+                    ...dateFilter,
+                    ...statusFilter,
+                },
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            name: true,
+                            email: true,
+                            role: true,
+                            depot: true,
+                            department: true,
+                        },
+                    },
+                },
+                orderBy: { createdAt: "desc" },
+                skip,
+                take: limit,
+            });
+        }
+
         return {
-            requests,
+            requests, // hierarchy
             total,
             page,
             totalPages: Math.ceil(total / limit),
+            specialDeptRequests, // ✅ department-based flagged requests
         };
     } catch (error) {
         console.error("Error in getManagerUsersRequests:", error);
         throw error;
     }
 };
+
 // export const getManagerUsersRequests = async (managerId, role, page = 1, limit = 10) => {
 //     const skip = (page - 1) * limit;
 

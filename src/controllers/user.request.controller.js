@@ -522,6 +522,7 @@ export const getManagerUsersRequests = async (req, res) => {
         const status = req.query.status;
         const queryId = req.query.id;
         const userId = queryId || req.user.id;
+        const departement = req.user.department;
 
         const result = await requestService.getManagerUsersRequests(
             userId,
@@ -531,6 +532,7 @@ export const getManagerUsersRequests = async (req, res) => {
             startDate,
             endDate,
             status,
+            departement,
         );
         return successResponse(res, 200, "Manager's users requests retrieved successfully", result);
     } catch (error) {

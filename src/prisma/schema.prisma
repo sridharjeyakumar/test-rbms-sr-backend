@@ -39,6 +39,7 @@ model Request {
   id                                String     @id @default(uuid())
   divisionId                        String?    @unique
   date                              DateTime
+  freshCautions                      Json?
   selectedDepartment                String
   selectedSection                   String
   stationID                         String?

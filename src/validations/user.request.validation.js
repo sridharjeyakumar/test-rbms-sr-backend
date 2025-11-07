@@ -72,6 +72,20 @@ export const createRequestSchema = z.object({
     engDisconnectionAssignTo: z.string().optional(),
     engDisconnectionRemarks: z.string().optional(),
     tpcRemarks: z.string().optional(),
+    freshCautions: z
+        .array(
+            z.object({
+                adjacentLinesAffected: z.string().optional(),
+                freshCautionLocationFrom: z.string(),
+                freshCautionLocationTo: z.string(),
+                freshCautionSpeed: z.string(),
+                freshCautionFromDate: z.string().optional().nullable(),
+                freshCautionToDate: z.string().optional().nullable(),
+                freshCautionFromTime: z.string().optional().nullable(),
+                freshCautionToTime: z.string().optional().nullable(),
+            }),
+        )
+        .optional(),
 });
 
 export const updateRequestSchema = createRequestSchema.partial();

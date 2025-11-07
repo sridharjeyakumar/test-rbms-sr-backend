@@ -1014,12 +1014,18 @@ export const generateHqReport = async (
         ).length;
         const grantedCount = requests.filter((req) => req.isGranted === true).length;
         const appliedCount = requests.filter((req) => req.isApplied === true).length;
-        const notGranted = requests.filter((req) => req.isGranted === false).length;
+        const notGranted = requests.filter(
+            (req) => req.isGranted === false && req.isApplied === true,
+        ).length;
         const notAvailed = requests.filter(
             (req) =>
-                !req.AvailedTimeFrom &&
-                !req.AvailedTimeTo &&
-                (req.isApplied === null || req.isApplied === false),
+                !req.AvailedTimeFrom ||
+                !req.AvailedTimeTo ||
+                (req.isApplied === null && req.isGranted === true) ||
+                req.isApplied === false ||
+                (req.userResponse !== "ACCEPTED" &&
+                    req.useAcceptanceForSanction === false &&
+                    req.isSanctioned === true),
         ).length;
 
         return {

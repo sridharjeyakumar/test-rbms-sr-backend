@@ -607,9 +607,9 @@ export const createRequest = async (data, userId, divisionCode) => {
         if (filteredData.isSanctioned === true) {
             filteredData.sanctionedTimeFrom = filteredData.demandTimeFrom;
             filteredData.sanctionedTimeTo = filteredData.demandTimeTo;
-            filteredData.allSntAcceptance = true;
-            filteredData.allTrdAcceptance = true;
-            filteredData.allEnggAcceptance = true;
+            filteredData.allSntAcceptance = "ACCEPTED";
+            filteredData.allTrdAcceptance = "ACCEPTED";
+            filteredData.allEnggAcceptance = "ACCEPTED";
             filteredData.managerAcceptance = true;
             filteredData.managerAcceptanceId = "System";
             filteredData.adminAcceptance = true;

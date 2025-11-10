@@ -1019,8 +1019,7 @@ export const generateHqReport = async (
         ).length;
         const notAvailed = requests.filter(
             (req) =>
-                !req.AvailedTimeFrom ||
-                !req.AvailedTimeTo ||
+                (req.isSanctioned && !req.AvailedTimeFrom && !req.AvailedTimeTo) ||
                 (req.isApplied === null && req.isGranted === true) ||
                 req.isApplied === false ||
                 (req.userResponse !== "ACCEPTED" &&

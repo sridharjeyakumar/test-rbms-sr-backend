@@ -739,7 +739,8 @@ export const generateHqReport = async (
     majorSections,
     globalWorkType = "ALL",
     globalActivity = "ALL",
-    globalTimeSlot = "ALL",
+    durationOperator = "ALL", // CHANGED: from globalTimeSlot
+    durationValue = "",
 ) => {
     const whereClause = {};
     const filters = [];
@@ -805,9 +806,13 @@ export const generateHqReport = async (
     }
 
     // Activity filter
+    // Activity filter with contains (if you want partial matching)
     if (globalActivity !== "ALL") {
         filters.push({
-            activity: globalActivity,
+            activity: {
+                contains: globalActivity, // This will match "CSM", "CSM ", "CSM something"
+                mode: "insensitive",
+            },
         });
     }
 
@@ -818,7 +823,8 @@ export const generateHqReport = async (
     console.log("Additional filters:", {
         globalWorkType,
         globalActivity,
-        globalTimeSlot,
+        durationOperator,
+        durationValue,
     });
 
     // 📊 Get all requests with the combined filters
@@ -867,34 +873,51 @@ export const generateHqReport = async (
         },
     });
 
-    // Apply time slot filtering in memory
-    let timeFilteredRequests = allRequests;
-    if (globalTimeSlot !== "ALL") {
-        timeFilteredRequests = allRequests.filter((req) => {
-            if (!req.demandTimeFrom) return false;
+    let durationFilteredRequests = allRequests;
 
-            const demandTime = new Date(req.demandTimeFrom);
-            const hour = demandTime.getUTCHours();
+    // Apply duration filtering if specified
+    if (durationOperator !== "ALL" && durationValue) {
+        const durationNum = parseFloat(durationValue);
 
-            switch (globalTimeSlot) {
-                case "Morning":
-                    return hour >= 4 && hour < 12;
-                case "Afternoon":
-                    return hour >= 12 && hour < 20;
-                case "Night":
-                    return hour >= 20 || hour < 4;
-                default:
-                    return true;
-            }
-        });
+        if (!isNaN(durationNum)) {
+            durationFilteredRequests = allRequests.filter((req) => {
+                if (!req.demandTimeFrom || !req.demandTimeTo) return false;
 
-        console.log(
-            `Time slot filtering: ${allRequests.length} -> ${timeFilteredRequests.length} requests`,
-        );
+                // Calculate duration in hours
+                const demandTimeFrom = new Date(req.demandTimeFrom);
+                const demandTimeTo = new Date(req.demandTimeTo);
+                let durationInHours = (demandTimeTo - demandTimeFrom) / (1000 * 60 * 60);
+
+                // Handle overnight blocks (negative duration)
+                if (durationInHours < 0) {
+                    durationInHours += 24;
+                }
+
+                // Apply the selected operator
+                switch (durationOperator) {
+                    case ">":
+                        return durationInHours > durationNum;
+                    case ">=":
+                        return durationInHours >= durationNum;
+                    case "=":
+                        return Math.abs(durationInHours - durationNum) < 0.1; // Allow small floating point differences
+                    case "<=":
+                        return durationInHours <= durationNum;
+                    case "<":
+                        return durationInHours < durationNum;
+                    default:
+                        return true;
+                }
+            });
+
+            console.log(
+                `Duration filtering (${durationOperator} ${durationValue}h): ${allRequests.length} -> ${durationFilteredRequests.length} requests`,
+            );
+        }
     }
 
-    // Use timeFilteredRequests for the rest of your processing
-    let filteredRequests = timeFilteredRequests;
+    // Use durationFilteredRequests for the rest of your processing
+    let filteredRequests = durationFilteredRequests;
 
     // Filter by major sections if specified
     if (
@@ -902,18 +925,13 @@ export const generateHqReport = async (
         majorSections.length > 0 &&
         !(majorSections.length === 1 && majorSections[0] === "All")
     ) {
-        filteredRequests = timeFilteredRequests.filter((req) =>
+        filteredRequests = durationFilteredRequests.filter((req) =>
             majorSections.includes(req.selectedSection),
         );
         console.log(
-            `Major section filtering: ${timeFilteredRequests.length} -> ${filteredRequests.length} requests`,
+            `Major section filtering: ${durationFilteredRequests.length} -> ${filteredRequests.length} requests`,
         );
     }
-
-    // Log final counts
-    console.log(
-        `Final filtered requests: ${filteredRequests.length} out of original ${allRequests.length}`,
-    );
 
     // Group requests by major section
     const requestsBySection = {};

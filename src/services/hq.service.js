@@ -1016,11 +1016,13 @@ export const generateHqReport = async (
         totalAvailed = parseFloat(totalAvailed.toFixed(2));
 
         // Calculate percentages
-        const percentGranted =
-            totalSanctioned > 0
-                ? parseFloat(((totalGranted / totalSanctioned) * 100).toFixed(2))
-                : 0;
+        // const percentGranted =
+        //     totalSanctioned > 0
+        //         ? parseFloat(((totalGranted / totalSanctioned) * 100).toFixed(2))
+        //         : 0;
 
+        const percentGranted =
+            totalApplied > 0 ? parseFloat(((totalGranted / totalApplied) * 100).toFixed(2)) : 0;
         const percentAvailed =
             totalGranted > 0 ? parseFloat(((totalAvailed / totalGranted) * 100).toFixed(2)) : 0;
 
@@ -1141,11 +1143,13 @@ export const generateHqReport = async (
         totalAvailed = parseFloat(totalAvailed.toFixed(2));
 
         // Calculate percentages
-        const percentGranted =
-            totalSanctioned > 0
-                ? parseFloat(((totalGranted / totalSanctioned) * 100).toFixed(2))
-                : 0;
+        // const percentGranted =
+        //     totalSanctioned > 0
+        //         ? parseFloat(((totalGranted / totalSanctioned) * 100).toFixed(2))
+        //         : 0;
 
+        const percentGranted =
+            totalApplied > 0 ? parseFloat(((totalGranted / totalApplied) * 100).toFixed(2)) : 0;
         const percentAvailed =
             totalGranted > 0 ? parseFloat(((totalAvailed / totalGranted) * 100).toFixed(2)) : 0;
 

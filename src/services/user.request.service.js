@@ -566,6 +566,8 @@ export const createRequest = async (data, userId, divisionCode) => {
             "engDisconnectionRemarks",
             "tpcRemarks",
             "freshCautions",
+            "assetNumber",
+            "assetName",
         ];
 
         const filteredData = Object.fromEntries(

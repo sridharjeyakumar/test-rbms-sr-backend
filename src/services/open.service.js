@@ -151,6 +151,10 @@ export const fetchSanctionedRequests = async (startDate, endDate, CUG, availedRe
             isApplied: true,
             sntDisconnectionRequirements: true,
             powerBlockRequirements: true,
+            blockBurst: true,
+            repercussions: true,
+            assetName: true,
+            assetNumber: true,
             availedBy: {
                 select: {
                     name: true,
@@ -308,6 +312,10 @@ export const fetchSanctionedRequests = async (startDate, endDate, CUG, availedRe
             // Add noOfTrackMachines field if available
             noOfTrackMachines: noOfTrackMachines,
             overAllStatus: request.overAllStatus,
+            blockBurst: request.blockBurst,
+            repercussions: request.repercussions,
+            assetName: request.assetName,
+            assetNumber: request.assetNumber,
             user: request.user
                 ? {
                       applicantName: request.user.name,
@@ -437,6 +445,9 @@ export const updateSanctionedRequestAvailed = async (id, availed, additionalData
     if (additionalData.isGranted === true) {
         updateData.isApplied = additionalData.isApplied;
     }
+    if (additionalData.blockBurst !== undefined) {
+        updateData.blockBurst = additionalData.blockBurst;
+    }
 
     const updatedRequest = await prisma.request.update({
         where: { divisionId: id },
@@ -460,6 +471,7 @@ export const updateSanctionedRequestAvailed = async (id, availed, additionalData
             TrdDisconnectionAvailedTimeTo: true,
             isGranted: true,
             isApplied: true,
+            blockBurst: true,
             availedBy: {
                 select: {
                     id: true,

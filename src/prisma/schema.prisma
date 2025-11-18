@@ -148,6 +148,9 @@ model Request {
   engDisconnectionRequired          Boolean?   @default(false)
   tpcRemarks                        String?
   Draft                             Boolean?   @default(false)
+  blockBurst                        Boolean?   @default(false)
+  assetName                         String?
+  assetNumber                       String?
 
   @@index([userId])
   @@index([managerAcceptanceId])

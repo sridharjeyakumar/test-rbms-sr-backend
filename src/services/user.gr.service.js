@@ -319,6 +319,8 @@ export const generateHqReport = async (startDate, endDate, blockTypes, majorSect
             grantedToTime: true,
             userId: true,
             selectedDepo: true,
+            isApplied: true,
+            isGranted: true,
         },
     });
 
@@ -349,6 +351,7 @@ export const generateHqReport = async (startDate, endDate, blockTypes, majorSect
         let totalSanctioned = 0;
         let totalGranted = 0;
         let totalAvailed = 0;
+        let totalApplied = 0;
 
         requests.forEach((req) => {
             // Calculate demanded hours
@@ -369,6 +372,21 @@ export const generateHqReport = async (startDate, endDate, blockTypes, majorSect
                         : sanctionedDurationInHours;
                 totalSanctioned += sanctionedDurationInHours;
             }
+            if (
+                req.isSanctioned &&
+                req.isApplied === true &&
+                req.sanctionedTimeFrom &&
+                req.sanctionedTimeTo
+            ) {
+                let sanctionedDurationInHours =
+                    (new Date(req.sanctionedTimeTo) - new Date(req.sanctionedTimeFrom)) /
+                    (1000 * 60 * 60);
+                sanctionedDurationInHours =
+                    sanctionedDurationInHours < 0
+                        ? sanctionedDurationInHours + 24
+                        : sanctionedDurationInHours;
+                totalApplied += sanctionedDurationInHours;
+            }
             // Calculate granted hours (if available)
             if (req.grantedFromTime && req.grantedToTime) {
                 let grantedDurationInHours =
@@ -398,6 +416,7 @@ export const generateHqReport = async (startDate, endDate, blockTypes, majorSect
         totalSanctioned = parseFloat(totalSanctioned.toFixed(2));
         totalGranted = parseFloat(totalGranted.toFixed(2));
         totalAvailed = parseFloat(totalAvailed.toFixed(2));
+        totalApplied = parseFloat(totalApplied.toFixed(2));
 
         // Calculate percentages
         const percentSanctioned =
@@ -407,9 +426,7 @@ export const generateHqReport = async (startDate, endDate, blockTypes, majorSect
 
         const percentGranted =
             // totalDemanded > 0 ? parseFloat(((totalGranted / totalDemanded) * 100).toFixed(2)) : 0;
-            totalSanctioned > 0
-                ? parseFloat(((totalGranted / totalSanctioned) * 100).toFixed(2))
-                : 0;
+            totalApplied > 0 ? parseFloat(((totalGranted / totalApplied) * 100).toFixed(2)) : 0;
 
         const percentAvailed =
             // totalSanctioned > 0 ? parseFloat(((totalAvailed / totalSanctioned) * 100).toFixed(2)) : 0;
@@ -420,6 +437,15 @@ export const generateHqReport = async (startDate, endDate, blockTypes, majorSect
         const approvedCount = requests.filter((req) => req.isSanctioned === true).length;
         const availedCount = requests.filter(
             (req) => req.AvailedTimeFrom && req.AvailedTimeTo,
+        ).length;
+        const appliedCount = filteredRequests.filter((req) => req.isApplied === true).length;
+        const grantedCount = filteredRequests.filter((req) => req.isGranted === true).length;
+        const notGranted = filteredRequests.filter((req) => req.isGranted === false).length;
+        const notAvailed = filteredRequests.filter(
+            (req) =>
+                !req.AvailedTimeFrom &&
+                !req.AvailedTimeTo &&
+                (req.isApplied === null || req.isApplied === false),
         ).length;
 
         return {
@@ -436,16 +462,23 @@ export const generateHqReport = async (startDate, endDate, blockTypes, majorSect
             DemandsCount: demandsCount,
             ApprovedCount: approvedCount,
             AvailedCount: availedCount,
+            Applied: totalApplied,
+            AppliedCount: appliedCount,
+            GrantedCount: grantedCount,
+            NotGrantedCount: notGranted,
+            NotAvailedCount: notAvailed,
         };
     });
 
     // If no major sections were specified, we'll still get one summary for all requests
     if (pastBlockSummary.length === 0 && filteredRequests.length > 0) {
         // Calculate combined metrics (original behavior)
+        filteredRequests = filteredRequests.filter((req) => req.userId === user_id);
         let totalDemanded = 0;
         let totalSanctioned = 0;
         let totalGranted = 0;
         let totalAvailed = 0;
+        let totalApplied = 0;
 
         filteredRequests.forEach((req) => {
             // Calculate demanded hours
@@ -466,6 +499,21 @@ export const generateHqReport = async (startDate, endDate, blockTypes, majorSect
                         : sanctionedDurationInHours;
                 totalSanctioned += sanctionedDurationInHours;
             }
+            if (
+                req.isSanctioned &&
+                req.isApplied === true &&
+                req.sanctionedTimeFrom &&
+                req.sanctionedTimeTo
+            ) {
+                let sanctionedDurationInHours =
+                    (new Date(req.sanctionedTimeTo) - new Date(req.sanctionedTimeFrom)) /
+                    (1000 * 60 * 60);
+                sanctionedDurationInHours =
+                    sanctionedDurationInHours < 0
+                        ? sanctionedDurationInHours + 24
+                        : sanctionedDurationInHours;
+                totalApplied += sanctionedDurationInHours;
+            }
             // Calculate granted hours (if available)
             if (req.grantedFromTime && req.grantedToTime) {
                 let grantedDurationInHours =
@@ -493,6 +541,7 @@ export const generateHqReport = async (startDate, endDate, blockTypes, majorSect
 
         totalDemanded = parseFloat(totalDemanded.toFixed(2));
         totalSanctioned = parseFloat(totalSanctioned.toFixed(2));
+        totalApplied = parseFloat(totalApplied.toFixed(2));
         totalGranted = parseFloat(totalGranted.toFixed(2));
         totalAvailed = parseFloat(totalAvailed.toFixed(2));
 
@@ -504,9 +553,7 @@ export const generateHqReport = async (startDate, endDate, blockTypes, majorSect
 
         const percentGranted =
             // totalDemanded > 0 ? parseFloat(((totalGranted / totalDemanded) * 100).toFixed(2)) : 0;
-            totalSanctioned > 0
-                ? parseFloat(((totalGranted / totalSanctioned) * 100).toFixed(2))
-                : 0;
+            totalApplied > 0 ? parseFloat(((totalGranted / totalApplied) * 100).toFixed(2)) : 0;
 
         const percentAvailed =
             // totalSanctioned > 0 ? parseFloat(((totalAvailed / totalSanctioned) * 100).toFixed(2)) : 0;
@@ -517,6 +564,21 @@ export const generateHqReport = async (startDate, endDate, blockTypes, majorSect
         const approvedCount = filteredRequests.filter((req) => req.isSanctioned === true).length;
         const availedCount = filteredRequests.filter(
             (req) => req.AvailedTimeFrom && req.AvailedTimeTo,
+        ).length;
+
+        const appliedCount = requests.filter((req) => req.isApplied === true).length;
+        const grantedCount = requests.filter((req) => req.isGranted === true).length;
+        const notGranted = requests.filter(
+            (req) => req.isGranted === false && req.isApplied === true,
+        ).length;
+        const notAvailed = requests.filter(
+            (req) =>
+                (req.isSanctioned && !req.AvailedTimeFrom && !req.AvailedTimeTo) ||
+                (req.isApplied === null && req.isGranted === true) ||
+                req.isApplied === false ||
+                (req.userResponse !== "ACCEPTED" &&
+                    req.useAcceptanceForSanction === false &&
+                    req.isSanctioned === true),
         ).length;
 
         pastBlockSummary.push({
@@ -531,6 +593,11 @@ export const generateHqReport = async (startDate, endDate, blockTypes, majorSect
             DemandsCount: demandsCount,
             ApprovedCount: approvedCount,
             AvailedCount: availedCount,
+            Applied: totalApplied,
+            AppliedCount: appliedCount,
+            GrantedCount: grantedCount,
+            NotGrantedCount: notGranted,
+            NotAvailedCount: notAvailed,
         });
     }
 
@@ -548,6 +615,14 @@ export const generateHqReport = async (startDate, endDate, blockTypes, majorSect
             selectedSection: {
                 in: majorSections,
             },
+        });
+        whereClauseNew.AND.push({
+            userId: user_id,
+        });
+    } else {
+        // ✅ CRITICAL FIX: If no major sections specified, still filter by user_id
+        whereClauseNew.AND.push({
+            userId: user_id,
         });
     }
 
@@ -579,6 +654,24 @@ export const generateHqReport = async (startDate, endDate, blockTypes, majorSect
             userId: true, // Include userId for filtering
             activity: true, // Include activity for detailed report
             selectedDepo: true,
+            isApplied: true,
+            isGranted: true,
+            enggDisconnectionsRequired: true,
+            powerBlockRequired: true,
+            sntDisconnectionRequired: true,
+            AppliedTimeFrom: true,
+            AppliedTimeTo: true,
+            userResponse: true,
+            selectedDepo: true,
+            userAcceptanceForSanction: true,
+            user: {
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    role: true,
+                },
+            },
         },
     });
 
@@ -605,6 +698,22 @@ export const generateHqReport = async (startDate, endDate, blockTypes, majorSect
             SanctionedTimeTo: req.sanctionedTimeTo,
             AvailedTimeFrom: req.AvailedTimeFrom,
             AvailedTimeTo: req.AvailedTimeTo,
+            selectedDepo: req.selectedDepo,
+            enggDisconnectionsRequired: req.enggDisconnectionsRequired,
+            appliedTimeFrom: req.AppliedTimeFrom,
+            appliedTimeTo: req.AppliedTimeTo,
+            powerBlockRequired: req.powerBlockRequired,
+            sntDisconnectionRequired: req.sntDisconnectionRequired,
+            selectedDepartment: req.selectedDepartment,
+            userId: req.user?.id,
+            userName: req.user?.name,
+            userEmail: req.user?.email,
+            userRole: req.user?.role,
+            userResponse: req.userResponse,
+            userAcceptanceForSanction: req.userAcceptanceForSanction,
+            isSanctioned: req.isSanctioned,
+            isApplied: req.isApplied,
+            isGranted: req.isGranted,
             selectedDepo: req.selectedDepo,
         };
     });

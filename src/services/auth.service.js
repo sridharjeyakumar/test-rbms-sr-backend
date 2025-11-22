@@ -235,7 +235,7 @@ const storeOtp = async (userId, phone, otp) => {
 export const phoneLogin = async (phone) => {
     try {
         let user = await prisma.user.findFirst({ where: { phone } });
-        if (!user || user.role === "JUNIOR_OFFICER" || user.role === "SENIOR_OFFICER") {
+        if (!user) {
             throw new Error("No user found with this phone number");
         }
 

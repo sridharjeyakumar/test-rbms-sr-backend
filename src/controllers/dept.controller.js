@@ -56,7 +56,12 @@ export const createUser = async (req, res) => {
     try {
         const userData = deptControllerValidation.createUserSchema.parse(req.body);
         const deptControllerId = req.user.id;
-        const newUser = await deptControllerService.createUser(userData, deptControllerId);
+        const location = req.user.location;
+        const newUser = await deptControllerService.createUser(
+            userData,
+            deptControllerId,
+            location,
+        );
         return successResponse(res, 201, "User created successfully", newUser);
     } catch (error) {
         handleError(error, res);

@@ -129,7 +129,7 @@ export const getAllJEsUnderUser = async (userId) => {
 };
 
 // Create a new USER under DEPT_CONTROLLER
-export const createUser = async (userData, deptControllerId) => {
+export const createUser = async (userData, deptControllerId, location) => {
     // Check if phone number already exists
     const existingUser = await prisma.user.findFirst({
         where: {
@@ -164,7 +164,7 @@ export const createUser = async (userData, deptControllerId) => {
         data: {
             ...userData,
             role: "USER",
-            location: userData.depot,
+            location: location || userData.depot,
             managerId: deptControllerId,
             password: hashedPassword,
             department: deptController?.department || null,

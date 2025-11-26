@@ -351,7 +351,7 @@ export const updateSanctionedRequestAvailed = async (id, availed, additionalData
             ? additionalData.isGranted
             : existingRequest.isGranted;
 
-    if (!finalIsGranted) {
+    if (!finalIsGranted && additionalData.isApplied !== true) {
         throw new Error("Cannot update availedResponse when isGranted is false");
     }
 

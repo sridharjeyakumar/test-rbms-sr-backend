@@ -114,8 +114,31 @@ export const checkEmailExists = async (email) => {
     });
     return !!existingUser;
 };
+// export const deleteUser = async (userId) => {
+//     // Check if the user exists and has role SM
+//     const user = await prisma.user.findFirst({
+//         where: {
+//             id: userId,
+//             role: "SM",
+//         },
+//     });
+
+//     if (!user) {
+//         throw new Error("Station Master not found");
+//     }
+
+//     // Delete the Station Master
+//     await prisma.user.delete({
+//         where: {
+//             id: userId,
+//         },
+//     });
+
+//     return { success: true, message: "Station Master deleted successfully" };
+// };
+
 export const deleteUser = async (userId) => {
-    // Check if the user exists and has role SM
+    // 1️⃣ Check if SM exists
     const user = await prisma.user.findFirst({
         where: {
             id: userId,
@@ -127,7 +150,21 @@ export const deleteUser = async (userId) => {
         throw new Error("Station Master not found");
     }
 
-    // Delete the Station Master
+    // 2️⃣ Delete SM OTPs
+    await prisma.otp.deleteMany({
+        where: {
+            userId: userId,
+        },
+    });
+
+    // 3️⃣ Delete SM Refresh Tokens
+    await prisma.refreshToken.deleteMany({
+        where: {
+            userId: userId,
+        },
+    });
+
+    // 4️⃣ Delete the SM
     await prisma.user.delete({
         where: {
             id: userId,

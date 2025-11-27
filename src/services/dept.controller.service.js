@@ -351,8 +351,39 @@ export const updateJE = async (jeId, updateData, deptControllerId) => {
 };
 
 // Delete a USER (and all JEs under them)
+// export const deleteUser = async (userId) => {
+//     // Check if the user exists
+//     const user = await prisma.user.findFirst({
+//         where: {
+//             id: userId,
+//             role: "USER",
+//         },
+//     });
+
+//     if (!user) {
+//         throw new Error("User not found");
+//     }
+
+//     // Delete all JEs under this USER first
+//     await prisma.user.deleteMany({
+//         where: {
+//             managerId: userId,
+//             role: "JE",
+//         },
+//     });
+
+//     // Delete the USER
+//     await prisma.user.delete({
+//         where: {
+//             id: userId,
+//         },
+//     });
+
+//     return { success: true, message: "User and all related JEs deleted successfully" };
+// };
+
 export const deleteUser = async (userId) => {
-    // Check if the user exists
+    // 1️⃣ Find user
     const user = await prisma.user.findFirst({
         where: {
             id: userId,
@@ -364,28 +395,81 @@ export const deleteUser = async (userId) => {
         throw new Error("User not found");
     }
 
-    // Delete all JEs under this USER first
-    await prisma.user.deleteMany({
-        where: {
-            managerId: userId,
-            role: "JE",
-        },
+    // 2️⃣ Delete USER OTPs
+    await prisma.otp.deleteMany({
+        where: { userId },
     });
 
-    // Delete the USER
+    // 3️⃣ Delete USER refresh tokens
+    await prisma.refreshToken.deleteMany({
+        where: { userId },
+    });
+
+    // 4️⃣ Find all JEs under this USER
+    const jes = await prisma.user.findMany({
+        where: { managerId: userId, role: "JE" },
+        select: { id: true },
+    });
+
+    const jeIds = jes.map((je) => je.id);
+
+    if (jeIds.length > 0) {
+        // 5️⃣ Delete OTPs of all JEs
+        await prisma.otp.deleteMany({
+            where: { userId: { in: jeIds } },
+        });
+
+        // 6️⃣ Delete RefreshTokens of all JEs
+        await prisma.refreshToken.deleteMany({
+            where: { userId: { in: jeIds } },
+        });
+
+        // 7️⃣ Delete JE users
+        await prisma.user.deleteMany({
+            where: { id: { in: jeIds } },
+        });
+    }
+
+    // 8️⃣ Delete the USER
     await prisma.user.delete({
-        where: {
-            id: userId,
-        },
+        where: { id: userId },
     });
 
-    return { success: true, message: "User and all related JEs deleted successfully" };
+    return {
+        success: true,
+        message: "User and related JEs deleted successfully",
+    };
 };
 
 // Delete a JE
+// export const deleteJE = async (jeId, deptControllerId) => {
+//     // Check if the JE exists
+//     const je = await prisma.user.findUnique({
+//         where: {
+//             id: jeId,
+//             role: "JE",
+//         },
+//         include: {
+//             manager: true,
+//         },
+//     });
+
+//     if (!je) {
+//         throw new Error("JE not found");
+//     }
+
+//     // Delete the JE
+//     await prisma.user.delete({
+//         where: {
+//             id: jeId,
+//         },
+//     });
+
+//     return { success: true, message: "JE deleted successfully" };
+// };
 export const deleteJE = async (jeId, deptControllerId) => {
-    // Check if the JE exists
-    const je = await prisma.user.findUnique({
+    // 1️⃣ Check if the JE exists
+    const je = await prisma.user.findFirst({
         where: {
             id: jeId,
             role: "JE",
@@ -399,11 +483,19 @@ export const deleteJE = async (jeId, deptControllerId) => {
         throw new Error("JE not found");
     }
 
-    // Delete the JE
+    // 2️⃣ Delete JE's OTPs
+    await prisma.otp.deleteMany({
+        where: { userId: jeId },
+    });
+
+    // 3️⃣ Delete JE's refresh tokens
+    await prisma.refreshToken.deleteMany({
+        where: { userId: jeId },
+    });
+
+    // 4️⃣ Delete the JE
     await prisma.user.delete({
-        where: {
-            id: jeId,
-        },
+        where: { id: jeId },
     });
 
     return { success: true, message: "JE deleted successfully" };

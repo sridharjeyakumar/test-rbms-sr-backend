@@ -419,11 +419,11 @@ export const updateSanctionedRequestAvailed = async (id, availed, additionalData
         );
     }
 
-    if (additionalData.appliedTimeFrom) {
-        updateData.AppliedTimeFrom = new Date(additionalData.appliedTimeFrom);
+    if (additionalData.AppliedTimeFrom) {
+        updateData.AppliedTimeFrom = new Date(additionalData.AppliedTimeFrom);
     }
-    if (additionalData.appliedTimeTo) {
-        updateData.AppliedTimeTo = new Date(additionalData.appliedTimeTo);
+    if (additionalData.AppliedTimeTo) {
+        updateData.AppliedTimeTo = new Date(additionalData.AppliedTimeTo);
     }
     // Add TRD disconnection availed times if they exist
     if (additionalData.trdDisconnectionAvailedTimeFrom) {
@@ -442,7 +442,7 @@ export const updateSanctionedRequestAvailed = async (id, availed, additionalData
         updateData.isGranted = additionalData.isGranted;
     }
 
-    if (additionalData.isGranted === true) {
+    if (additionalData.isApplied === true) {
         updateData.isApplied = additionalData.isApplied;
     }
     if (additionalData.blockBurst !== undefined) {

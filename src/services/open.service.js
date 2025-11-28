@@ -155,6 +155,7 @@ export const fetchSanctionedRequests = async (startDate, endDate, CUG, availedRe
             repercussions: true,
             assetName: true,
             assetNumber: true,
+            sanctionedRemarks: true,
             availedBy: {
                 select: {
                     name: true,
@@ -316,6 +317,7 @@ export const fetchSanctionedRequests = async (startDate, endDate, CUG, availedRe
             repercussions: request.repercussions,
             assetName: request.assetName,
             assetNumber: request.assetNumber,
+            sanctionedRemarks: request.sanctionedRemarks,
             user: request.user
                 ? {
                       applicantName: request.user.name,

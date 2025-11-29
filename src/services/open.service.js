@@ -409,15 +409,15 @@ export const updateSanctionedRequestAvailed = async (id, availed, additionalData
     }
 
     // Add SNT disconnection availed times if they exist
-    if (additionalData.sntDisconnectionAvailedTimeFrom) {
+    if (additionalData.SntDisconnectionAvailedTimeFrom) {
         updateData.SntDisconnectionAvailedTimeFrom = new Date(
-            additionalData.sntDisconnectionAvailedTimeFrom,
+            additionalData.SntDisconnectionAvailedTimeFrom,
         );
     }
 
-    if (additionalData.sntDisconnectionAvailedTimeTo) {
+    if (additionalData.SntDisconnectionAvailedTimeTo) {
         updateData.SntDisconnectionAvailedTimeTo = new Date(
-            additionalData.sntDisconnectionAvailedTimeTo,
+            additionalData.SntDisconnectionAvailedTimeTo,
         );
     }
 
@@ -428,15 +428,15 @@ export const updateSanctionedRequestAvailed = async (id, availed, additionalData
         updateData.AppliedTimeTo = new Date(additionalData.AppliedTimeTo);
     }
     // Add TRD disconnection availed times if they exist
-    if (additionalData.trdDisconnectionAvailedTimeFrom) {
+    if (additionalData.TrdDisconnectionAvailedTimeFrom) {
         updateData.TrdDisconnectionAvailedTimeFrom = new Date(
-            additionalData.trdDisconnectionAvailedTimeFrom,
+            additionalData.TrdDisconnectionAvailedTimeFrom,
         );
     }
 
-    if (additionalData.trdDisconnectionAvailedTimeTo) {
+    if (additionalData.TrdDisconnectionAvailedTimeTo) {
         updateData.TrdDisconnectionAvailedTimeTo = new Date(
-            additionalData.trdDisconnectionAvailedTimeTo,
+            additionalData.TrdDisconnectionAvailedTimeTo,
         );
     }
     // Update isGranted flag if it exists

@@ -24,16 +24,19 @@ export const calculateOverallStatus = (request, userDepartment = null) => {
         remarkByManager,
         disconnectionRequestRejectRemarks,
         adminRequestStatus,
+        remark,
     } = request;
 
     // Final state: User has accepted the sanctioned request
-    if (isSanctioned && userAcceptanceForSanction) {
-        return "Sanctioned and Accepted";
+    if (isSanctioned && userAcceptanceForSanction && remark === "") {
+        return "Sanctioned and Accepted by SSE";
     }
-
+    if (isSanctioned && userAcceptanceForSanction === false && remark !== "") {
+        return "Sanctioned and Rejected by SSE";
+    }
     // Request is sanctioned but waiting for user acceptance
     if (isSanctioned && !userAcceptanceForSanction) {
-        return "Sanctioned";
+        return "Sanctioned, Pending with SSE For Acceptance";
     }
 
     // Check for rejection scenarios
@@ -3668,6 +3671,7 @@ export const userRequestRemarkReject = async (id, remark) => {
     // Calculate overall status after user rejection (back to previous state)
     const overAllStatus = calculateOverallStatus({
         ...request,
+        remark: remark || "",
         userAcceptanceForSanction: false,
     });
 

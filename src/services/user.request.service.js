@@ -26,12 +26,13 @@ export const calculateOverallStatus = (request, userDepartment = null) => {
         adminRequestStatus,
         remark,
     } = request;
+    const remarkValue = remark || "";
 
     // Final state: User has accepted the sanctioned request
-    if (isSanctioned && userAcceptanceForSanction && remark === "") {
+    if (isSanctioned && userAcceptanceForSanction && remarkValue === "") {
         return "Sanctioned and Accepted by SSE";
     }
-    if (isSanctioned && userAcceptanceForSanction === false && remark !== "") {
+    if (isSanctioned && userAcceptanceForSanction === false && remarkValue !== "") {
         return "Sanctioned and Rejected by SSE";
     }
     // Request is sanctioned but waiting for user acceptance
@@ -82,8 +83,11 @@ export const calculateOverallStatus = (request, userDepartment = null) => {
     if (
         managerAcceptance &&
         adminAcceptance === false &&
-        ((sntDisconnectionRequired === false && remarkByManager?.trim()) ||
-            (sntDisconnectionRequired && allSntAcceptance === "ACCEPTED")) &&
+        sntDisconnectionRequired &&
+        allSntAcceptance === "ACCEPTED" &&
+        (enggDisconnectionsRequired === false ||
+            (enggDisconnectionsRequired && allEnggAcceptance === "ACCEPTED")) &&
+        (powerBlockRequired === false || (powerBlockRequired && allTrdAcceptance === "ACCEPTED")) &&
         adminRequestStatus !== "REJECTED" &&
         adminRequestStatus !== "APPROVED"
     ) {
@@ -93,19 +97,37 @@ export const calculateOverallStatus = (request, userDepartment = null) => {
     if (
         managerAcceptance &&
         adminAcceptance === false &&
-        ((enggDisconnectionsRequired === false && remarkByManager?.trim()) ||
+        enggDisconnectionsRequired &&
+        allEnggAcceptance === "ACCEPTED" &&
+        (sntDisconnectionRequired === false ||
+            (sntDisconnectionRequired && allSntAcceptance === "ACCEPTED")) &&
+        (powerBlockRequired === false || (powerBlockRequired && allTrdAcceptance === "ACCEPTED")) &&
+        adminRequestStatus !== "REJECTED" &&
+        adminRequestStatus !== "APPROVED"
+    ) {
+        return "with optg";
+    }
+
+    if (
+        managerAcceptance &&
+        adminAcceptance === false &&
+        powerBlockRequired &&
+        allTrdAcceptance === "ACCEPTED" &&
+        (sntDisconnectionRequired === false ||
+            (sntDisconnectionRequired && allSntAcceptance === "ACCEPTED")) &&
+        (enggDisconnectionsRequired === false ||
             (enggDisconnectionsRequired && allEnggAcceptance === "ACCEPTED")) &&
         adminRequestStatus !== "REJECTED" &&
         adminRequestStatus !== "APPROVED"
     ) {
         return "with optg";
     }
-
     if (
         managerAcceptance &&
         adminAcceptance === false &&
-        ((powerBlockRequired === false && remarkByManager?.trim()) ||
-            (powerBlockRequired && allTrdAcceptance === "ACCEPTED")) &&
+        powerBlockRequired === false &&
+        sntDisconnectionRequired === false &&
+        enggDisconnectionsRequired === false &&
         adminRequestStatus !== "REJECTED" &&
         adminRequestStatus !== "APPROVED"
     ) {

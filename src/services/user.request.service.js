@@ -2055,11 +2055,17 @@ export const getManagerUsersRequests = async (
             let deptCondition = {};
 
             if (departement === "ENGG") {
-                deptCondition = { enggDisconnectionsRequired: true };
+                deptCondition = {
+                    enggDisconnectionsRequired: true,
+                    allEnggAcceptance: { not: "ACCEPTED" },
+                };
             } else if (departement === "S&T") {
-                deptCondition = { sntDisconnectionRequired: true };
+                deptCondition = {
+                    sntDisconnectionRequired: true,
+                    allSntAcceptance: { not: "ACCEPTED" },
+                };
             } else if (departement === "TRD") {
-                deptCondition = { powerBlockRequired: true };
+                deptCondition = { powerBlockRequired: true, allTrdAcceptance: { not: "ACCEPTED" } };
             }
 
             specialDeptRequests = await prisma.request.findMany({

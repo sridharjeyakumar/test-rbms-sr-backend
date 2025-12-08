@@ -1,20 +1,33 @@
 {
     "version": 2,
     "builds": [
-      {
-        "src": "src/server.js",
-        "use": "@vercel/node"
-      }
+        {
+            "src": "src/server.js",
+            "use": "@vercel/node"
+        },
+        {
+            "src": "api/cron/auto-reject-cron.js",
+            "use": "@vercel/node"
+        }
     ],
     "routes": [
-      {
-        "src": "/(.*)",
-        "dest": "/src/server.js"
-      }
+        {
+            "src": "/api/cron/auto-reject-cron",
+            "dest": "/api/cron/auto-reject-cron.js"
+        },
+        {
+            "src": "/(.*)",
+            "dest": "/src/server.js"
+        }
+    ],
+    "crons": [
+        {
+            "path": "/api/cron/auto-reject-cron",
+            "schedule": "0 * * * *"
+        }
     ],
     "buildCommand": "cd src && npm install && npm run prisma:generate",
     "env": {
         "NODE_ENV": "production"
     }
-  }
-  
+}

@@ -353,10 +353,15 @@ export const updateSanctionedRequestAvailed = async (id, availed, additionalData
             ? additionalData.isGranted
             : existingRequest.isGranted;
 
-    if (!finalIsGranted && additionalData.isApplied !== true) {
-        throw new Error("Cannot update availedResponse when isGranted is false");
+    const isRejectionOrNotAvailed =
+        availed === false || additionalData.overAllStatus?.includes("rejected");
+    // if (!finalIsGranted && additionalData.isApplied !== true) {
+    //     throw new Error("Cannot update availedResponse when isGranted is false");
+    // }
+    // Only enforce the isGranted check for availed=true scenarios
+    if (availed === true && !finalIsGranted && additionalData.isApplied !== true) {
+        throw new Error("Cannot mark as availed when isGranted is false and not applied");
     }
-
     // Prepare update data
     const updateData = {
         availedResponse: String(availed),
@@ -387,7 +392,8 @@ export const updateSanctionedRequestAvailed = async (id, availed, additionalData
     }
     // Handle availed=false case
     else {
-        updateData.availedRemarks = additionalData.availedRemarks || null;
+        updateData.availedRemarks =
+            additionalData.rejectionRemarks || additionalData.availedRemarks || null;
         updateData.AvailedTimeFrom = null; // Clear times if availed is false
         updateData.AvailedTimeTo = null;
     }

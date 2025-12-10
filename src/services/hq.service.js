@@ -1161,7 +1161,9 @@ export const generateHqReport = async (
         ).length;
         const grantedCount = filteredRequests.filter((req) => req.isGranted === true).length;
         const appliedCount = filteredRequests.filter((req) => req.isApplied === true).length;
-        const notGranted = filteredRequests.filter((req) => req.isGranted === false).length;
+        const notGranted = filteredRequests.filter(
+            (req) => req.isGranted === false && req.isApplied === true,
+        ).length;
         const notAvailed = filteredRequests.filter(
             (req) =>
                 !req.AvailedTimeFrom &&

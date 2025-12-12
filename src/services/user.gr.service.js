@@ -826,6 +826,7 @@ export const generateHqReport = async (
             AppliedTimeFrom: true,
             AppliedTimeTo: true,
             userResponse: true,
+            stationID: true,
             userAcceptanceForSanction: true,
             user: {
                 select: {

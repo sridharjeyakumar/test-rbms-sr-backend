@@ -3046,6 +3046,131 @@ export const approveAllPendingRequests = async (adminId, startDate, endDate) => 
 //         throw new Error("Database operation failed");
 //     }
 // };
+// export const saveOptimizedData = async (optimizedData) => {
+//     try {
+//         // Fetch original requests to get demandTimeFrom and demandTimeTo
+//         const requestIds = optimizedData.map((r) => r.id);
+//         const originalRequests = await prisma.Request.findMany({
+//             where: { id: { in: requestIds } },
+//             select: {
+//                 id: true,
+//                 demandTimeFrom: true,
+//                 demandTimeTo: true,
+//             },
+//         });
+
+//         // Create a map for easy access
+//         const originalMap = new Map(originalRequests.map((r) => [r.id, r]));
+
+//         // First, create the optimized records
+//         const created = await prisma.optimize_Table.createMany({
+//             data: optimizedData.map((request) => {
+//                 const originalRequest = originalMap.get(request.id);
+//                 if (!originalRequest) {
+//                     throw new Error(`Original request ${request.id} not found`);
+//                 }
+
+//                 // Extract date parts from original demand times (UTC)
+//                 const demandFromDate = originalRequest.demandTimeFrom.toISOString().split("T")[0];
+//                 const demandToDate = originalRequest.demandTimeTo.toISOString().split("T")[0];
+
+//                 // Parse optimized times
+//                 const [fromHours, fromMinutes] = request.optimisedTimeFrom.split(":").map(Number);
+//                 const [toHours, toMinutes] = request.optimisedTimeTo.split(":").map(Number);
+
+//                 // Create dates in UTC to avoid timezone conversion
+//                 let timeFrom, timeTo;
+
+//                 if (toHours < fromHours || (toHours === fromHours && toMinutes < fromMinutes)) {
+//                     // Time crosses midnight - end time is next day
+//                     const [year, month, day] = demandFromDate.split("-").map(Number);
+//                     timeFrom = new Date(Date.UTC(year, month - 1, day, fromHours, fromMinutes, 0));
+
+//                     // Next day for end time
+//                     timeTo = new Date(Date.UTC(year, month - 1, day + 1, toHours, toMinutes, 0));
+//                 } else {
+//                     // Normal case - same day
+//                     const [yearFrom, monthFrom, dayFrom] = demandFromDate.split("-").map(Number);
+//                     const [yearTo, monthTo, dayTo] = demandToDate.split("-").map(Number);
+
+//                     timeFrom = new Date(
+//                         Date.UTC(yearFrom, monthFrom - 1, dayFrom, fromHours, fromMinutes, 0),
+//                     );
+//                     timeTo = new Date(Date.UTC(yearTo, monthTo - 1, dayTo, toHours, toMinutes, 0));
+//                 }
+
+//                 return {
+//                     id: request.id,
+//                     optimizeTimeFrom: timeFrom,
+//                     optimizeTimeTo: timeTo,
+//                     date: new Date(request.date), // Use UTC date
+//                     missionBlock: request.missionBlock,
+//                     otherAffectedLine: request.otherAffectedLine,
+//                     selectedDepartment: request.selectedDepartment,
+//                     selectedDepo: request.selectedDepo,
+//                     selectedStream: request.selectedStream,
+//                     selectedLine:
+//                         request.selectedLine ||
+//                         request.processedLineSections?.[0]?.lineName ||
+//                         "N/A",
+//                     selectedSection: request.selectedSection,
+//                 };
+//             }),
+//             skipDuplicates: true,
+//         });
+
+//         // Then update the original requests with the optimized times
+//         await Promise.all(
+//             optimizedData.map(async (request) => {
+//                 const originalRequest = originalMap.get(request.id);
+//                 if (!originalRequest) return;
+
+//                 // Extract date parts from original demand times (UTC)
+//                 const demandFromDate = originalRequest.demandTimeFrom.toISOString().split("T")[0];
+//                 const demandToDate = originalRequest.demandTimeTo.toISOString().split("T")[0];
+
+//                 // Parse optimized times
+//                 const [fromHours, fromMinutes] = request.optimisedTimeFrom.split(":").map(Number);
+//                 const [toHours, toMinutes] = request.optimisedTimeTo.split(":").map(Number);
+
+//                 let timeFrom, timeTo;
+
+//                 if (toHours < fromHours || (toHours === fromHours && toMinutes < fromMinutes)) {
+//                     // Time crosses midnight
+//                     const [year, month, day] = demandFromDate.split("-").map(Number);
+//                     timeFrom = new Date(Date.UTC(year, month - 1, day, fromHours, fromMinutes, 0));
+//                     timeTo = new Date(Date.UTC(year, month - 1, day + 1, toHours, toMinutes, 0));
+//                 } else {
+//                     // Normal case
+//                     const [yearFrom, monthFrom, dayFrom] = demandFromDate.split("-").map(Number);
+//                     const [yearTo, monthTo, dayTo] = demandToDate.split("-").map(Number);
+
+//                     timeFrom = new Date(
+//                         Date.UTC(yearFrom, monthFrom - 1, dayFrom, fromHours, fromMinutes, 0),
+//                     );
+//                     timeTo = new Date(Date.UTC(yearTo, monthTo - 1, dayTo, toHours, toMinutes, 0));
+//                 }
+
+//                 await prisma.Request.update({
+//                     where: { id: request.id },
+//                     data: {
+//                         optimizeTimeFrom: timeFrom,
+//                         optimizeTimeTo: timeTo,
+//                     },
+//                 });
+//             }),
+//         );
+
+//         return {
+//             success: true,
+//             count: created.count,
+//             message: `${created.count} new optimized records added and requests updated`,
+//         };
+//     } catch (error) {
+//         console.error("Failed to process optimized data:", error);
+//         throw new Error("Database operation failed");
+//     }
+// };
 export const saveOptimizedData = async (optimizedData) => {
     try {
         // Fetch original requests to get demandTimeFrom and demandTimeTo
@@ -3070,40 +3195,30 @@ export const saveOptimizedData = async (optimizedData) => {
                     throw new Error(`Original request ${request.id} not found`);
                 }
 
-                // Extract date parts from original demand times (UTC)
-                const demandFromDate = originalRequest.demandTimeFrom.toISOString().split("T")[0];
-                const demandToDate = originalRequest.demandTimeTo.toISOString().split("T")[0];
-
                 // Parse optimized times
                 const [fromHours, fromMinutes] = request.optimisedTimeFrom.split(":").map(Number);
                 const [toHours, toMinutes] = request.optimisedTimeTo.split(":").map(Number);
 
-                // Create dates in UTC to avoid timezone conversion
-                let timeFrom, timeTo;
+                // Get the date from the request (assuming this is the date the optimization applies to)
+                const optimizationDate = new Date(request.date);
 
-                if (toHours < fromHours || (toHours === fromHours && toMinutes < fromMinutes)) {
-                    // Time crosses midnight - end time is next day
-                    const [year, month, day] = demandFromDate.split("-").map(Number);
-                    timeFrom = new Date(Date.UTC(year, month - 1, day, fromHours, fromMinutes, 0));
+                // Always start with optimization date for both times
+                let timeFrom = new Date(optimizationDate);
+                timeFrom.setUTCHours(fromHours, fromMinutes, 0, 0);
 
-                    // Next day for end time
-                    timeTo = new Date(Date.UTC(year, month - 1, day + 1, toHours, toMinutes, 0));
-                } else {
-                    // Normal case - same day
-                    const [yearFrom, monthFrom, dayFrom] = demandFromDate.split("-").map(Number);
-                    const [yearTo, monthTo, dayTo] = demandToDate.split("-").map(Number);
+                let timeTo = new Date(optimizationDate);
+                timeTo.setUTCHours(toHours, toMinutes, 0, 0);
 
-                    timeFrom = new Date(
-                        Date.UTC(yearFrom, monthFrom - 1, dayFrom, fromHours, fromMinutes, 0),
-                    );
-                    timeTo = new Date(Date.UTC(yearTo, monthTo - 1, dayTo, toHours, toMinutes, 0));
+                // If end time is earlier than start time (crosses midnight), add 1 day to end time
+                if (timeTo < timeFrom) {
+                    timeTo.setUTCDate(timeTo.getUTCDate() + 1);
                 }
 
                 return {
                     id: request.id,
                     optimizeTimeFrom: timeFrom,
                     optimizeTimeTo: timeTo,
-                    date: new Date(request.date), // Use UTC date
+                    date: optimizationDate,
                     missionBlock: request.missionBlock,
                     otherAffectedLine: request.otherAffectedLine,
                     selectedDepartment: request.selectedDepartment,
@@ -3125,30 +3240,23 @@ export const saveOptimizedData = async (optimizedData) => {
                 const originalRequest = originalMap.get(request.id);
                 if (!originalRequest) return;
 
-                // Extract date parts from original demand times (UTC)
-                const demandFromDate = originalRequest.demandTimeFrom.toISOString().split("T")[0];
-                const demandToDate = originalRequest.demandTimeTo.toISOString().split("T")[0];
-
                 // Parse optimized times
                 const [fromHours, fromMinutes] = request.optimisedTimeFrom.split(":").map(Number);
                 const [toHours, toMinutes] = request.optimisedTimeTo.split(":").map(Number);
 
-                let timeFrom, timeTo;
+                // Get the date from the request
+                const optimizationDate = new Date(request.date);
 
-                if (toHours < fromHours || (toHours === fromHours && toMinutes < fromMinutes)) {
-                    // Time crosses midnight
-                    const [year, month, day] = demandFromDate.split("-").map(Number);
-                    timeFrom = new Date(Date.UTC(year, month - 1, day, fromHours, fromMinutes, 0));
-                    timeTo = new Date(Date.UTC(year, month - 1, day + 1, toHours, toMinutes, 0));
-                } else {
-                    // Normal case
-                    const [yearFrom, monthFrom, dayFrom] = demandFromDate.split("-").map(Number);
-                    const [yearTo, monthTo, dayTo] = demandToDate.split("-").map(Number);
+                // Always start with optimization date for both times
+                let timeFrom = new Date(optimizationDate);
+                timeFrom.setUTCHours(fromHours, fromMinutes, 0, 0);
 
-                    timeFrom = new Date(
-                        Date.UTC(yearFrom, monthFrom - 1, dayFrom, fromHours, fromMinutes, 0),
-                    );
-                    timeTo = new Date(Date.UTC(yearTo, monthTo - 1, dayTo, toHours, toMinutes, 0));
+                let timeTo = new Date(optimizationDate);
+                timeTo.setUTCHours(toHours, toMinutes, 0, 0);
+
+                // If end time is earlier than start time (crosses midnight), add 1 day to end time
+                if (timeTo < timeFrom) {
+                    timeTo.setUTCDate(timeTo.getUTCDate() + 1);
                 }
 
                 await prisma.Request.update({

@@ -1021,22 +1021,36 @@ export const generateHqReport = async (
         //         ? parseFloat(((totalGranted / totalSanctioned) * 100).toFixed(2))
         //         : 0;
 
-        const percentGranted =
-            totalApplied > 0 ? parseFloat(((totalGranted / totalApplied) * 100).toFixed(2)) : 0;
-        const percentAvailed =
-            totalGranted > 0 ? parseFloat(((totalAvailed / totalGranted) * 100).toFixed(2)) : 0;
-
+        //         const percentGranted =
+        //             totalApplied > 0 ? parseFloat(((totalGranted / totalApplied) * 100).toFixed(2)) : 0;
+        //         const percentAvailed =
+        //             totalGranted > 0 ? parseFloat(((totalAvailed / totalGranted) * 100).toFixed(2)) : 0;
+        // const percentSanctioned =
+        //             totalDemanded > 0
+        //                 ? parseFloat(((totalSanctioned / totalDemanded) * 100).toFixed(2))
+        //                 : 0;
         // Count the number of blocks by status
         const demandsCount = requests.length;
         const approvedCount = requests.filter((req) => req.isSanctioned === true).length;
         const availedCount = requests.filter(
             (req) => req.AvailedTimeFrom && req.AvailedTimeTo,
         ).length;
-        const grantedCount = requests.filter((req) => req.isGranted === true).length;
-        const appliedCount = requests.filter((req) => req.isApplied === true).length;
-        const notGranted = requests.filter(
-            (req) => req.isGranted === false && req.isApplied === true,
+        const grantedCount = requests.filter(
+            (req) => req.isGranted === true && req.isSanctioned === true,
         ).length;
+        const appliedCount = requests.filter(
+            (req) => req.isApplied === true && req.isSanctioned === true,
+        ).length;
+        const notGranted = requests.filter(
+            (req) => req.isGranted === false && req.isApplied === true && req.isSanctioned === true,
+        ).length;
+        const percentGranted =
+            appliedCount > 0 ? parseFloat(((grantedCount / appliedCount) * 100).toFixed(2)) : 0;
+
+        const percentAvailed =
+            grantedCount > 0 ? parseFloat(((availedCount / grantedCount) * 100).toFixed(2)) : 0;
+        const percentSanctioned =
+            demandsCount > 0 ? parseFloat(((approvedCount / demandsCount) * 100).toFixed(2)) : 0;
         const notAvailed = requests.filter(
             (req) =>
                 (req.isSanctioned && !req.AvailedTimeFrom && !req.AvailedTimeTo) ||
@@ -1058,6 +1072,7 @@ export const generateHqReport = async (
             Applied: totalApplied,
             PercentGranted: percentGranted,
             PercentAvailed: percentAvailed,
+            PercentSanctioned: percentSanctioned,
             DemandsCount: demandsCount,
             ApprovedCount: approvedCount,
             AvailedCount: availedCount,
@@ -1148,10 +1163,14 @@ export const generateHqReport = async (
         //         ? parseFloat(((totalGranted / totalSanctioned) * 100).toFixed(2))
         //         : 0;
 
-        const percentGranted =
-            totalApplied > 0 ? parseFloat(((totalGranted / totalApplied) * 100).toFixed(2)) : 0;
-        const percentAvailed =
-            totalGranted > 0 ? parseFloat(((totalAvailed / totalGranted) * 100).toFixed(2)) : 0;
+        //     const percentGranted =
+        //         totalApplied > 0 ? parseFloat(((totalGranted / totalApplied) * 100).toFixed(2)) : 0;
+        //     const percentAvailed =
+        //         totalGranted > 0 ? parseFloat(((totalAvailed / totalGranted) * 100).toFixed(2)) : 0;
+        //  const percentSanctioned =
+        //         totalDemanded > 0
+        //             ? parseFloat(((totalSanctioned / totalDemanded) * 100).toFixed(2))
+        //             : 0;
 
         // Count the number of blocks by status
         const demandsCount = filteredRequests.length;
@@ -1159,18 +1178,29 @@ export const generateHqReport = async (
         const availedCount = filteredRequests.filter(
             (req) => req.AvailedTimeFrom && req.AvailedTimeTo,
         ).length;
-        const grantedCount = filteredRequests.filter((req) => req.isGranted === true).length;
-        const appliedCount = filteredRequests.filter((req) => req.isApplied === true).length;
+        const grantedCount = filteredRequests.filter(
+            (req) => req.isGranted === true && req.isSanctioned === true,
+        ).length;
+        const appliedCount = filteredRequests.filter(
+            (req) => req.isApplied === true && req.isSanctioned === true,
+        ).length;
         const notGranted = filteredRequests.filter(
-            (req) => req.isGranted === false && req.isApplied === true,
+            (req) => req.isGranted === false && req.isApplied === true && req.isSanctioned === true,
         ).length;
         const notAvailed = filteredRequests.filter(
             (req) =>
                 !req.AvailedTimeFrom &&
                 !req.AvailedTimeTo &&
-                (req.isApplied === null || req.isApplied === false),
+                (req.isApplied === null || req.isApplied === false) &&
+                req.isSanctioned === true,
         ).length;
+        const percentGranted =
+            appliedCount > 0 ? parseFloat(((grantedCount / appliedCount) * 100).toFixed(2)) : 0;
 
+        const percentAvailed =
+            grantedCount > 0 ? parseFloat(((availedCount / grantedCount) * 100).toFixed(2)) : 0;
+        const percentSanctioned =
+            demandsCount > 0 ? parseFloat(((approvedCount / demandsCount) * 100).toFixed(2)) : 0;
         pastBlockSummary.push({
             Department: location || "All Locations",
             TotalRequests: filteredRequests.length,
@@ -1180,7 +1210,9 @@ export const generateHqReport = async (
             Granted: totalGranted,
             Availed: totalAvailed,
             Applied: totalApplied,
+            PercentSanctioned: percentSanctioned,
             PercentGranted: percentGranted,
+            PercentAvailed: percentAvailed,
             PercentAvailed: percentAvailed,
             DemandsCount: demandsCount,
             ApprovedCount: approvedCount,

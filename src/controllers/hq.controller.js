@@ -16,6 +16,7 @@ export const generateReport = async (req, res) => {
             globalActivity,
             durationOperator, // CHANGED: from globalTimeSlot
             durationValue,
+            pcInstalledStation,
         } = req.query;
         // Parse query parameters
         const locationFilter = location ? location.split(",") : [];
@@ -26,6 +27,7 @@ export const generateReport = async (req, res) => {
         const globalActivityFilter = globalActivity || "ALL";
         const durationOperatorFilter = durationOperator || "ALL"; // CHANGED
         const durationValueFilter = durationValue || "";
+        const pcInstalledStationFilter = pcInstalledStation === "true";
         // Convert date strings to Date objects
         // const parsedStartDate = startDate ? new Date(startDate) : null;
         // const parsedEndDate = endDate ? new Date(endDate) : null;
@@ -42,6 +44,7 @@ export const generateReport = async (req, res) => {
             globalActivityFilter,
             durationOperatorFilter, // CHANGED: from globalTimeSlotFilter
             durationValueFilter,
+            pcInstalledStationFilter,
         );
 
         return successResponse(res, 200, "Report generated successfully", result);

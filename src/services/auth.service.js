@@ -217,9 +217,24 @@ export const deleteUserById = async (id) => {
 
 // Phone Auth Service
 
+// const storeOtp = async (userId, phone, otp) => {
+//     const validTill = new Date();
+//     validTill.setMinutes(validTill.getMinutes() + 10);
+
+//     return await prisma.otp.create({
+//         data: {
+//             code: otp,
+//             phone,
+//             validTill,
+//             userId,
+//         },
+//     });
+// };
 const storeOtp = async (userId, phone, otp) => {
-    const validTill = new Date();
-    validTill.setMinutes(validTill.getMinutes() + 10);
+    const now = new Date();
+    const validTill = new Date(
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 23, 59, 59, 999),
+    );
 
     return await prisma.otp.create({
         data: {
@@ -230,8 +245,27 @@ const storeOtp = async (userId, phone, otp) => {
         },
     });
 };
-
 // Generate OTP and store it in the database
+// export const phoneLogin = async (phone) => {
+//     try {
+//         let user = await prisma.user.findFirst({ where: { phone } });
+//         if (!user) {
+//             throw new Error("No user found with this phone number");
+//         }
+
+//         const otp = generateOTP();
+//         const createdOtp = await storeOtp(user.id, phone, otp);
+//         await sendOtp(phone, otp);
+
+//         return {
+//             message: "OTP sent successfully",
+//             userId: user.id,
+//             otpId: createdOtp.id,
+//         };
+//     } catch (error) {
+//         throw error;
+//     }
+// };
 export const phoneLogin = async (phone) => {
     try {
         let user = await prisma.user.findFirst({ where: { phone } });
@@ -239,20 +273,47 @@ export const phoneLogin = async (phone) => {
             throw new Error("No user found with this phone number");
         }
 
-        const otp = generateOTP();
-        const createdOtp = await storeOtp(user.id, phone, otp);
-        await sendOtp(phone, otp);
+        const now = new Date();
 
-        return {
-            message: "OTP sent successfully",
-            userId: user.id,
-            otpId: createdOtp.id,
-        };
+        // Just check if there's any valid (not expired) OTP
+        const existingOtp = await prisma.otp.findFirst({
+            where: {
+                userId: user.id,
+                validTill: {
+                    gt: now,
+                },
+            },
+            orderBy: {
+                createdAt: "desc",
+            },
+        });
+
+        console.log("Current time:", now.toISOString());
+        console.log("Existing OTP validTill:", existingOtp?.validTill?.toISOString());
+
+        if (existingOtp) {
+            return {
+                message: "OTP already exists and is valid",
+                userId: user.id,
+                otpId: existingOtp.id,
+                exists: true,
+            };
+        } else {
+            const otpCode = generateOTP();
+            const createdOtp = await storeOtp(user.id, phone, otpCode);
+            await sendOtp(phone, otpCode);
+
+            return {
+                message: "New OTP sent successfully",
+                userId: user.id,
+                otpId: createdOtp.id,
+                exists: false,
+            };
+        }
     } catch (error) {
         throw error;
     }
 };
-
 // Verify phone OTP service
 export const verifyPhoneOtp = async (otpId, otpCode) => {
     try {

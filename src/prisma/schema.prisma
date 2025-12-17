@@ -34,7 +34,12 @@ model User {
   @@index([email])
   @@index([role])
 }
-
+model Station{
+  id            String     @id @default(uuid())
+  depot         String
+  location      String
+  createdAt     DateTime       @default(now())
+}
 model Request {
   id                                String     @id @default(uuid())
   divisionId                        String?    @unique

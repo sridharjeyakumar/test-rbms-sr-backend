@@ -101,6 +101,45 @@ export const getAllUsers = async (deptControllerId) => {
     return filteredUsers.map(formatUserData);
 };
 
+export const getAllStations = async (location) => {
+    try {
+        if (!location) {
+            throw new Error("Location is required");
+        }
+
+        const stations = await prisma.station.findMany({
+            where: {
+                location: location,
+            },
+            orderBy: {
+                createdAt: "desc",
+            },
+        });
+        return stations;
+    } catch (error) {
+        console.error("Error fetching stations by location:", error);
+        throw new Error(`Failed to fetch stations for location: ${location}`);
+    }
+};
+export const createStation = async (depot, location) => {
+    try {
+        if (!depot || !location) {
+            throw new Error("Depot and location are required");
+        }
+
+        const newStation = await prisma.station.create({
+            data: {
+                depot,
+                location,
+            },
+        });
+
+        return newStation;
+    } catch (error) {
+        console.error("Error creating station:", error);
+        throw new Error("Failed to create station");
+    }
+};
 // Get all JE role users under a specific USER
 export const getAllJEsUnderUser = async (userId) => {
     // First verify that the userId belongs to a USER role
@@ -381,7 +420,24 @@ export const updateJE = async (jeId, updateData, deptControllerId) => {
 
 //     return { success: true, message: "User and all related JEs deleted successfully" };
 // };
+export const deleteStation = async (stationId) => {
+    try {
+        if (!stationId) {
+            throw new Error("Station ID is required");
+        }
 
+        const deletedStation = await prisma.station.delete({
+            where: {
+                id: stationId,
+            },
+        });
+
+        return deletedStation;
+    } catch (error) {
+        console.error("Error deleting station:", error);
+        throw new Error("Failed to delete station");
+    }
+};
 export const deleteUser = async (userId) => {
     // 1️⃣ Find user
     const user = await prisma.user.findFirst({

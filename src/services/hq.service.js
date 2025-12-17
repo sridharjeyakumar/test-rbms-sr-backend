@@ -729,6 +729,15 @@ function formatDateForQuery(dateStr) {
 //         detailedData,
 //     };
 // };
+const extractStationsFromMissionBlock = (missionBlock) => {
+    if (!missionBlock) return [];
+
+    return missionBlock
+        .split(",")
+        .flatMap((block) => block.split("-"))
+        .map((s) => s.trim())
+        .filter(Boolean);
+};
 
 export const generateHqReport = async (
     startDate,
@@ -741,6 +750,7 @@ export const generateHqReport = async (
     globalActivity = "ALL",
     durationOperator = "ALL", // CHANGED: from globalTimeSlot
     durationValue = "",
+    pcInstalledStationFilter,
 ) => {
     const whereClause = {};
     const filters = [];
@@ -932,6 +942,19 @@ export const generateHqReport = async (
             `Major section filtering: ${durationFilteredRequests.length} -> ${filteredRequests.length} requests`,
         );
     }
+    // 🖥️ PC INSTALLED STATION FILTER (ADD HERE)
+    if (pcInstalledStationFilter === true) {
+        const stations = await prisma.station.findMany({
+            select: { depot: true },
+        });
+
+        const depotSet = new Set(stations.map((s) => s.depot?.trim()).filter(Boolean));
+
+        filteredRequests = filteredRequests.filter((req) => {
+            const stationsInMission = extractStationsFromMissionBlock(req.missionBlock);
+            return stationsInMission.some((st) => depotSet.has(st));
+        });
+    }
 
     // Group requests by major section
     const requestsBySection = {};
@@ -1064,7 +1087,8 @@ export const generateHqReport = async (
         return {
             Department: section,
             TotalRequests: requests.length,
-            MissionBlocks: requests.MissionBlock,
+            // MissionBlocks: requests.MissionBlock,
+            MissionBlocks: requests.map((req) => req.missionBlock),
             Demanded: totalDemanded,
             Approved: totalSanctioned,
             Granted: totalGranted,

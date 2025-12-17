@@ -22,6 +22,7 @@ router.post("/updateOptimizeTimes", authenticateToken, requestController.updateO
 router.post("/editRequest", authenticateToken, requestController.editRequest);
 
 router.post("/updateSanctionStatus", authenticateToken, requestController.updateSanctionStatus);
+router.post("/updateDraftStatus", authenticateToken, requestController.updateDraftStatus);
 router.delete(
     "/delet-optimiseData/:id",
     authenticateToken,

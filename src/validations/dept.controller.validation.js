@@ -17,6 +17,9 @@ export const createUserSchema = z.object({
     phone: z.string().regex(/^[0-9]{10}$/, "Phone number must be 10 digits"),
     depot: z.string().min(1, "Depot is required"),
 });
+export const createStationSchema = z.object({
+    depot: z.string().min(1, "Depot is required"),
+});
 
 // Validation schema for creating a JE under USER
 export const createJESchema = z.object({

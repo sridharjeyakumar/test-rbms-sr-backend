@@ -68,6 +68,26 @@ export const createRequestSchema = z.object({
     routeTo: z.string().optional(),
     managerAcceptance: z.boolean().optional().default(false),
     isSanctioned: z.boolean().optional().default(false),
+    enggDisconnectionsRequired: z.boolean().optional(),
+    engDisconnectionAssignTo: z.string().optional(),
+    engDisconnectionRemarks: z.string().optional(),
+    tpcRemarks: z.string().optional(),
+    assetNumber: z.string().optional(),
+    assetNumber: z.string().optional(),
+    freshCautions: z
+        .array(
+            z.object({
+                adjacentLinesAffected: z.string().optional(),
+                freshCautionLocationFrom: z.string(),
+                freshCautionLocationTo: z.string(),
+                freshCautionSpeed: z.string(),
+                freshCautionFromDate: z.string().optional().nullable(),
+                freshCautionToDate: z.string().optional().nullable(),
+                freshCautionFromTime: z.string().optional().nullable(),
+                freshCautionToTime: z.string().optional().nullable(),
+            }),
+        )
+        .optional(),
 });
 
 export const updateRequestSchema = createRequestSchema.partial();
@@ -90,4 +110,5 @@ export const editUserRequestSchema = z.object({
     date: z.string().datetime().optional(),
     demandTimeFrom: z.string().datetime().optional(),
     demandTimeTo: z.string().datetime().optional(),
+    tpcRemarks: z.string().optional(),
 });

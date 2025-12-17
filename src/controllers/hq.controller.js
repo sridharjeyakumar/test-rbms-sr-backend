@@ -5,13 +5,29 @@ import { handleError, successResponse } from "../utils/response.js";
 // Generate DRM Report
 export const generateReport = async (req, res) => {
     try {
-        const { startDate, endDate, location, department, blockType, majorSections } = req.query;
+        const {
+            startDate,
+            endDate,
+            location,
+            department,
+            blockType,
+            majorSections,
+            globalWorkType,
+            globalActivity,
+            durationOperator, // CHANGED: from globalTimeSlot
+            durationValue,
+            pcInstalledStation,
+        } = req.query;
         // Parse query parameters
         const locationFilter = location ? location.split(",") : [];
         const majorSectionsFilter = majorSections ? majorSections.split(",") : [];
         const departmentFilter = department ? department.split(",") : [];
         const blockTypeFilter = blockType ? blockType.split(",") : [];
-
+        const globalWorkTypeFilter = globalWorkType || "ALL";
+        const globalActivityFilter = globalActivity || "ALL";
+        const durationOperatorFilter = durationOperator || "ALL"; // CHANGED
+        const durationValueFilter = durationValue || "";
+        const pcInstalledStationFilter = pcInstalledStation === "true";
         // Convert date strings to Date objects
         // const parsedStartDate = startDate ? new Date(startDate) : null;
         // const parsedEndDate = endDate ? new Date(endDate) : null;
@@ -23,7 +39,12 @@ export const generateReport = async (req, res) => {
             locationFilter,
             departmentFilter,
             blockTypeFilter,
-            majorSectionsFilter
+            majorSectionsFilter,
+            globalWorkTypeFilter,
+            globalActivityFilter,
+            durationOperatorFilter, // CHANGED: from globalTimeSlotFilter
+            durationValueFilter,
+            pcInstalledStationFilter,
         );
 
         return successResponse(res, 200, "Report generated successfully", result);

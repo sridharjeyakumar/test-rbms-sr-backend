@@ -5,6 +5,13 @@ import { handleError, successResponse } from "../utils/response.js";
 export const createRequest = async (req, res) => {
     try {
         const data = requestValidation.createRequestSchema.parse(req.body);
+        const fromTime = new Date(data.demandTimeFrom);
+        const toTime = new Date(data.demandTimeTo);
+
+        if (toTime <= fromTime) {
+            toTime.setDate(toTime.getDate() + 1);
+            data.demandTimeTo = toTime.toISOString();
+        }
         const request = await requestService.createRequest(data, req.user.id, req.user.location);
         return successResponse(res, 201, "Request created successfully", request);
     } catch (error) {
@@ -107,7 +114,8 @@ export const updateOptimizeTimes = async (req, res) => {
 
 export const editRequest = async (req, res) => {
     try {
-        const { requestId, optimizeTimeFrom, optimizeTimeTo, date, mobileView } = req.body;
+        const { requestId, optimizeTimeFrom, optimizeTimeTo, date, mobileView, sanctionedRemark } =
+            req.body;
 
         const updatedRequest = await requestService.editRequest(
             requestId,
@@ -115,6 +123,7 @@ export const editRequest = async (req, res) => {
             optimizeTimeTo,
             date,
             mobileView,
+            sanctionedRemark,
         );
 
         return res.json({
@@ -159,7 +168,39 @@ export const updateSanctionStatus = async (req, res) => {
         });
     }
 };
+// controllers/requestController.js
+export const updateDraftStatus = async (req, res) => {
+    try {
+        const { requests } = req.body;
 
+        if (!Array.isArray(requests)) {
+            return res.status(400).json({
+                message: "Invalid request format. Expected { requests: [...] }",
+            });
+        }
+
+        // Validate each request
+        for (const request of requests) {
+            if (!request.id) {
+                return res.status(400).json({
+                    message: "Each request must contain id",
+                });
+            }
+        }
+
+        const result = await requestService.updateDraftStatus(requests);
+        return res.status(200).json({
+            success: true,
+            data: result,
+        });
+    } catch (error) {
+        console.error("Error in updateDraftStatus:", error);
+        return res.status(500).json({
+            message: "Failed to update draft status",
+            error: error.message,
+        });
+    }
+};
 export const deleteOptimizeDataRequest = async (req, res) => {
     try {
         const { id } = req.params;
@@ -329,7 +370,7 @@ export const getOtherRequests = async (req, res) => {
         const limit = parseInt(req.query.limit) || 10;
         const startDate = req.query.startDate;
         const endDate = req.query.endDate;
-        const userDepartement = req.query.userDepartement;
+        const userDepartment = req.query.userDepartment;
 
         if (!req.user || !req.user.email) {
             return res.status(400).json({
@@ -337,17 +378,18 @@ export const getOtherRequests = async (req, res) => {
                 message: "User email unavailable",
             });
         }
+
         const result = await requestService.getOtherRequests(
             selectedDepo,
             page,
             limit,
-            req.user.email,
             startDate,
             endDate,
-            userDepartement,
+            userDepartment,
         );
         return successResponse(res, 200, "Other requests retrieved successfully", result);
     } catch (error) {
+        console.log(error);
         handleError(error, res);
     }
 };
@@ -410,9 +452,10 @@ export const updateOtherRequest = async (req, res) => {
         const { id } = requestValidation.requestIdSchema.parse(req.params);
         const { disconnectionRequestRejectRemarks, acceptRemarks } =
             requestValidation.updateOtherRequestSchema.parse(req.body);
-        const { userDepartement, mobileView } = req.body;
+        const { userDepartment, depot, mobileView } = req.body;
         const acceptance = req.query.accept === "true";
         const location = req.user.location;
+        const userId = req.user.id;
 
         // For rejection, remarks are required
         if (!acceptance && !disconnectionRequestRejectRemarks) {
@@ -428,10 +471,12 @@ export const updateOtherRequest = async (req, res) => {
             id,
             acceptance,
             disconnectionRequestRejectRemarks,
-            userDepartement,
+            userDepartment,
+            depot,
             mobileView,
             location,
             acceptRemarks,
+            userId,
         );
         return successResponse(res, 200, "Request updated successfully", request);
     } catch (error) {
@@ -484,6 +529,7 @@ export const getManagerUsersRequests = async (req, res) => {
         const status = req.query.status;
         const queryId = req.query.id;
         const userId = queryId || req.user.id;
+        const departement = req.user.department;
 
         const result = await requestService.getManagerUsersRequests(
             userId,
@@ -493,6 +539,7 @@ export const getManagerUsersRequests = async (req, res) => {
             startDate,
             endDate,
             status,
+            departement,
         );
         return successResponse(res, 200, "Manager's users requests retrieved successfully", result);
     } catch (error) {
@@ -580,6 +627,7 @@ export const acceptRequestByAdmin = async (req, res) => {
         const { id } = requestValidation.requestIdSchema.parse(req.params);
         const acceptance = req.query.accept === "true";
         const mobileView = req.body.isMobileView;
+        const adminRequestStatus = req.body.adminRequestStatus;
         const remarkByManager = req.body.remark;
         const request = await requestService.acceptRequestByAdmin(
             id,
@@ -587,6 +635,7 @@ export const acceptRequestByAdmin = async (req, res) => {
             req.user.id,
             mobileView,
             remarkByManager,
+            adminRequestStatus,
         );
         return successResponse(res, 200, "Request accepted successfully", request);
     } catch (error) {

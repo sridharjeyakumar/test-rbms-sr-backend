@@ -101,6 +101,45 @@ export const getAllUsers = async (deptControllerId) => {
     return filteredUsers.map(formatUserData);
 };
 
+export const getAllStations = async (location) => {
+    try {
+        if (!location) {
+            throw new Error("Location is required");
+        }
+
+        const stations = await prisma.station.findMany({
+            where: {
+                location: location,
+            },
+            orderBy: {
+                createdAt: "desc",
+            },
+        });
+        return stations;
+    } catch (error) {
+        console.error("Error fetching stations by location:", error);
+        throw new Error(`Failed to fetch stations for location: ${location}`);
+    }
+};
+export const createStation = async (depot, location) => {
+    try {
+        if (!depot || !location) {
+            throw new Error("Depot and location are required");
+        }
+
+        const newStation = await prisma.station.create({
+            data: {
+                depot,
+                location,
+            },
+        });
+
+        return newStation;
+    } catch (error) {
+        console.error("Error creating station:", error);
+        throw new Error("Failed to create station");
+    }
+};
 // Get all JE role users under a specific USER
 export const getAllJEsUnderUser = async (userId) => {
     // First verify that the userId belongs to a USER role
@@ -129,7 +168,7 @@ export const getAllJEsUnderUser = async (userId) => {
 };
 
 // Create a new USER under DEPT_CONTROLLER
-export const createUser = async (userData, deptControllerId) => {
+export const createUser = async (userData, deptControllerId, location) => {
     // Check if phone number already exists
     const existingUser = await prisma.user.findFirst({
         where: {
@@ -164,7 +203,7 @@ export const createUser = async (userData, deptControllerId) => {
         data: {
             ...userData,
             role: "USER",
-            location: userData.depot,
+            location: location || userData.depot,
             managerId: deptControllerId,
             password: hashedPassword,
             department: deptController?.department || null,
@@ -351,8 +390,56 @@ export const updateJE = async (jeId, updateData, deptControllerId) => {
 };
 
 // Delete a USER (and all JEs under them)
+// export const deleteUser = async (userId) => {
+//     // Check if the user exists
+//     const user = await prisma.user.findFirst({
+//         where: {
+//             id: userId,
+//             role: "USER",
+//         },
+//     });
+
+//     if (!user) {
+//         throw new Error("User not found");
+//     }
+
+//     // Delete all JEs under this USER first
+//     await prisma.user.deleteMany({
+//         where: {
+//             managerId: userId,
+//             role: "JE",
+//         },
+//     });
+
+//     // Delete the USER
+//     await prisma.user.delete({
+//         where: {
+//             id: userId,
+//         },
+//     });
+
+//     return { success: true, message: "User and all related JEs deleted successfully" };
+// };
+export const deleteStation = async (stationId) => {
+    try {
+        if (!stationId) {
+            throw new Error("Station ID is required");
+        }
+
+        const deletedStation = await prisma.station.delete({
+            where: {
+                id: stationId,
+            },
+        });
+
+        return deletedStation;
+    } catch (error) {
+        console.error("Error deleting station:", error);
+        throw new Error("Failed to delete station");
+    }
+};
 export const deleteUser = async (userId) => {
-    // Check if the user exists
+    // 1️⃣ Find user
     const user = await prisma.user.findFirst({
         where: {
             id: userId,
@@ -364,28 +451,81 @@ export const deleteUser = async (userId) => {
         throw new Error("User not found");
     }
 
-    // Delete all JEs under this USER first
-    await prisma.user.deleteMany({
-        where: {
-            managerId: userId,
-            role: "JE",
-        },
+    // 2️⃣ Delete USER OTPs
+    await prisma.otp.deleteMany({
+        where: { userId },
     });
 
-    // Delete the USER
+    // 3️⃣ Delete USER refresh tokens
+    await prisma.refreshToken.deleteMany({
+        where: { userId },
+    });
+
+    // 4️⃣ Find all JEs under this USER
+    const jes = await prisma.user.findMany({
+        where: { managerId: userId, role: "JE" },
+        select: { id: true },
+    });
+
+    const jeIds = jes.map((je) => je.id);
+
+    if (jeIds.length > 0) {
+        // 5️⃣ Delete OTPs of all JEs
+        await prisma.otp.deleteMany({
+            where: { userId: { in: jeIds } },
+        });
+
+        // 6️⃣ Delete RefreshTokens of all JEs
+        await prisma.refreshToken.deleteMany({
+            where: { userId: { in: jeIds } },
+        });
+
+        // 7️⃣ Delete JE users
+        await prisma.user.deleteMany({
+            where: { id: { in: jeIds } },
+        });
+    }
+
+    // 8️⃣ Delete the USER
     await prisma.user.delete({
-        where: {
-            id: userId,
-        },
+        where: { id: userId },
     });
 
-    return { success: true, message: "User and all related JEs deleted successfully" };
+    return {
+        success: true,
+        message: "User and related JEs deleted successfully",
+    };
 };
 
 // Delete a JE
+// export const deleteJE = async (jeId, deptControllerId) => {
+//     // Check if the JE exists
+//     const je = await prisma.user.findUnique({
+//         where: {
+//             id: jeId,
+//             role: "JE",
+//         },
+//         include: {
+//             manager: true,
+//         },
+//     });
+
+//     if (!je) {
+//         throw new Error("JE not found");
+//     }
+
+//     // Delete the JE
+//     await prisma.user.delete({
+//         where: {
+//             id: jeId,
+//         },
+//     });
+
+//     return { success: true, message: "JE deleted successfully" };
+// };
 export const deleteJE = async (jeId, deptControllerId) => {
-    // Check if the JE exists
-    const je = await prisma.user.findUnique({
+    // 1️⃣ Check if the JE exists
+    const je = await prisma.user.findFirst({
         where: {
             id: jeId,
             role: "JE",
@@ -399,11 +539,19 @@ export const deleteJE = async (jeId, deptControllerId) => {
         throw new Error("JE not found");
     }
 
-    // Delete the JE
+    // 2️⃣ Delete JE's OTPs
+    await prisma.otp.deleteMany({
+        where: { userId: jeId },
+    });
+
+    // 3️⃣ Delete JE's refresh tokens
+    await prisma.refreshToken.deleteMany({
+        where: { userId: jeId },
+    });
+
+    // 4️⃣ Delete the JE
     await prisma.user.delete({
-        where: {
-            id: jeId,
-        },
+        where: { id: jeId },
     });
 
     return { success: true, message: "JE deleted successfully" };

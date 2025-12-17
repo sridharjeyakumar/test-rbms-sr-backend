@@ -39,7 +39,15 @@ export const getAllUsers = async (req, res) => {
         handleError(error, res);
     }
 };
-
+export const getAllStations = async (req, res) => {
+    try {
+        const deptControllerLocation = req.user.location;
+        const stations = await deptControllerService.getAllStations(deptControllerLocation);
+        return successResponse(res, 200, "Stations retrieved successfully", stations);
+    } catch (error) {
+        handleError(error, res);
+    }
+};
 // Get all JE role users under a specific USER
 export const getAllJEsUnderUser = async (req, res) => {
     try {
@@ -56,13 +64,28 @@ export const createUser = async (req, res) => {
     try {
         const userData = deptControllerValidation.createUserSchema.parse(req.body);
         const deptControllerId = req.user.id;
-        const newUser = await deptControllerService.createUser(userData, deptControllerId);
+        const location = req.user.location;
+        const newUser = await deptControllerService.createUser(
+            userData,
+            deptControllerId,
+            location,
+        );
         return successResponse(res, 201, "User created successfully", newUser);
     } catch (error) {
         handleError(error, res);
     }
 };
-
+export const createStation = async (req, res) => {
+    try {
+        const userData = deptControllerValidation.createStationSchema.parse(req.body);
+        const depot = req.body.depot;
+        const location = req.user.location;
+        const newUser = await deptControllerService.createStation(depot, location);
+        return successResponse(res, 201, "User created successfully", newUser);
+    } catch (error) {
+        handleError(error, res);
+    }
+};
 // Create a new JE under USER
 export const createJE = async (req, res) => {
     try {
@@ -108,6 +131,15 @@ export const deleteUser = async (req, res) => {
         const { userId } = req.params;
         const deptControllerId = req.user.id;
         const result = await deptControllerService.deleteUser(userId, deptControllerId);
+        return successResponse(res, 200, result.message, result);
+    } catch (error) {
+        handleError(error, res);
+    }
+};
+export const deleteStation = async (req, res) => {
+    try {
+        const { stationId } = req.params;
+        const result = await deptControllerService.deleteStation(stationId);
         return successResponse(res, 200, result.message, result);
     } catch (error) {
         handleError(error, res);

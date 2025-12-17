@@ -1,20 +1,19 @@
 {
     "version": 2,
     "builds": [
-      {
-        "src": "src/server.js",
-        "use": "@vercel/node"
-      }
+        {
+            "src": "src/server.js",
+            "use": "@vercel/node"
+        }
     ],
     "routes": [
-      {
-        "src": "/(.*)",
-        "dest": "/src/server.js"
-      }
+        {
+            "src": "/(.*)",
+            "dest": "/src/server.js"
+        }
     ],
     "buildCommand": "cd src && npm install && npm run prisma:generate",
     "env": {
         "NODE_ENV": "production"
     }
-  }
-  
+}

@@ -32,6 +32,10 @@ export const patchSanctionedRequestSchema = z.object({
     trdDisconnectionAvailedTimeTo: z.string().optional(),
     // Is granted flag
     isGranted: z.boolean().optional(),
+    isApplied: z.boolean().optional(),
+    blockBurst: z.boolean().optional(),
+    AppliedTimeFrom: z.string().optional(),
+    AppliedTimeTo: z.string().optional(),
 });
 
 export const updateTrainArrivalSchema = z.object({
